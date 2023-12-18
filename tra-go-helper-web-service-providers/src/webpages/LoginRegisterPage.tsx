@@ -122,7 +122,7 @@ const LoginRegisterWebpage: React.FC = () => {
     
     // Success Modal
     const [showSuccessModal, setShowSuccessModal] = useState(false);
-
+    //registration Logic
     const handleRegistration = async (e: FormEvent) => {
       e.preventDefault();
   
