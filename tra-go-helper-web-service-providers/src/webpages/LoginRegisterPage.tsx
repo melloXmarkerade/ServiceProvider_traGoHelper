@@ -18,7 +18,7 @@ const LoginRegisterWebpage: React.FC = () => {
     const handleLogin = async () => {
         try {
 
-        //   //enable this when all are set, this validation will only accept login accepted users (not Tested yet it will be tested later down the line)
+        //   //enable this when all are set, this validation will only accept login accepted users (not Tested yet it will be tested later down the line) Make sure to comment the code after this in order to work properly
           
         //   const { user } = await firebase.auth().signInWithEmailAndPassword(email, password);
         //   if (user) {
