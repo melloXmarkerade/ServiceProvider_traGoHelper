@@ -17,9 +17,39 @@ const LoginRegisterWebpage: React.FC = () => {
     
     const handleLogin = async () => {
         try {
-          // Sign in with email and password
+
+        //   //enable this when all are set, this validation will only accept login accepted users (not Tested yet it will be tested later down the line)
+          
+        //   const { user } = await firebase.auth().signInWithEmailAndPassword(email, password);
+        //   if (user) {
+        //     // Get user data from the Realtime Database
+        //     const userSnapshot = await firebase.database().ref(`serviceProvider/${user.uid}`).once('value');
+        //     const userData = userSnapshot.val();
+          
+        //     if (userData && userData.status === 'Accepted') {
+        //       console.log(`User ID: ${user.uid}`);
+        //       console.log(`Email: ${user.email}`);
+          
+        //       // Redirect to the dashboard or perform other actions
+        //       // Example using Navigate from React Router:
+        //       // Note: This assumes you have a <Route path="/dashboard" ... /> defined in your React Router setup
+        //       window.location.href = '/dashboard';
+        //     } else {
+        //       // Display an error message for unaccepted accounts
+        //       setErrorMessage('Your account has not been accepted yet. Please wait for approval.');
+        //       setShowModal(true);
+          
+        //       // Sign out the user since the account is not accepted
+        //       await firebase.auth().signOut();
+        //     }
+        //   } else {
+        //     // Handle the case where user is null (sign-in failed)
+        //     setErrorMessage('Sign-in failed. Please check your credentials and try again.');
+        //     setShowModal(true);
+        //   }
+            
+        // Sign in with email and password
           await firebase.auth().signInWithEmailAndPassword(email, password);
-    
           // Get the current user
           const currentUser = firebase.auth().currentUser;
           // Store user data in the Realtime Database
@@ -97,8 +127,9 @@ const LoginRegisterWebpage: React.FC = () => {
     businessDescription: '',
     status: 'Pending',
     selectedServices: {}, // Add this line to initialize selectedServices
-  });
+    });
 
+    //Time Format
     const handleTimeChange = (type: 'start' | 'end', e: ChangeEvent<HTMLInputElement>): void => {
         // Ensure the time value is in 'HH:mm' format
         const formattedTime = e.target.value;
@@ -112,6 +143,7 @@ const LoginRegisterWebpage: React.FC = () => {
         }));
     };
     
+    //Test Format
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
         setFormData({
           ...formData,
@@ -286,6 +318,7 @@ const LoginRegisterWebpage: React.FC = () => {
       }
     };
 
+    //CheckBoxes Format
     const handleCheckboxChange = (service: string | number) => {
         setFormData((prevData) => ({
           ...prevData,
@@ -295,9 +328,6 @@ const LoginRegisterWebpage: React.FC = () => {
           },
         }));
       };
-      
-
-
 
     // Transition for both login and registration
     const [showRegisterForm, setShowRegisterForm] = useState<boolean>(false);
