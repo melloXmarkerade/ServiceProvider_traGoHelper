@@ -1,0 +1,366 @@
+body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+}
+
+.dashboard-sidebar{
+    width: 300px;
+    position: fixed;
+    background: #1b1a1a;
+    left: 0;
+    top: 0;
+    height: 100%;
+    z-index: 100;
+    /*transition: width 300ms;*/
+}
+
+/*logo*/
+.dashboard-siderbar-brand .dashboard-icon-trago{
+    width: 190px;
+    padding-top: 16px;
+    padding-left: 32px;
+    padding-right: 0;
+    padding-bottom: 16px;
+}
+
+.dashboard-sidebar-menu{
+    margin-top: 12px;
+}
+
+.dashboard-sidebar-menu .dashboard-list{
+    width: 100%;
+    margin-bottom: 25px;
+    padding-left: 16px;
+}
+
+.dashboard-sidebar-menu a{
+    padding-left: 22px;
+    display: flex;
+    align-items: center;
+    color: white;
+    font-size: 16px;
+}
+
+/*hover for side bar*/
+.dashboard-sidebar-menu a.dashboard-active{
+    width: 262px;
+    background: rgb(93, 90, 90);
+    padding-top: 5px;
+    padding-bottom: 5px;
+    color: white;
+    border-radius: 30px 0 0 30px;
+}
+
+
+.dashboard-sidebar-menu .icon{
+    width: 20px;
+    margin-right: 5px;
+}
+
+.dashboard-sidebar-menu a img:first-child{
+    width: 30px;
+    padding-right: 16px;
+}
+
+.dashboard-siderbar-brand .dashboard-logo-trago{
+    width: 80px;
+    padding-left: 5px;
+    padding-top: 7px;
+    padding-bottom: 3px;
+    display: none;
+}
+
+#nav-toggle:checked + .dashboard-sidebar .dashboard-sidebar-menu a.dashboard-active {
+    width: auto; /* Adjust to the default width */
+    background: initial;
+    padding-top: initial;
+    padding-bottom: initial;
+    color: initial;
+    border-radius: initial;
+}
+
+
+#nav-toggle:checked + .dashboard-sidebar .dashboard-siderbar-brand .dashboard-logo-trago{
+    display: block
+}
+
+
+/* When the checkbox is checked, change the width of the sidebar */
+#nav-toggle:checked + .dashboard-sidebar{
+    width: 86px;
+}
+
+#nav-toggle:checked + .dashboard-sidebar li a {
+    padding-left: 16px;
+}
+
+/* Adjust other styles when the sidebar is minimized */
+#nav-toggle:checked + .dashboard-sidebar .dashboard-siderbar-brand .dashboard-icon-trago,
+#nav-toggle:checked + .dashboard-sidebar li a span:last-child{
+    display: none;
+}
+
+#nav-toggle:checked ~ .dashboard-main-content{
+    margin-left: 90px;
+}
+
+#nav-toggle:checked ~ .dashboard-main-content .dashboard-header{
+    width: calc(100% - 110px);
+    left: 86px; /* Adjust the value as needed */
+}
+
+#nav-toggle:checked ~ .dashboard-main-content .dashboard-header .dashboard-notification .icon-notification {
+    margin-left: 985px; /* Adjust the value as needed */
+}
+
+
+.dashboard-main-content{
+    transition: margin-left 300ms;
+    margin-left: 300px; 
+}
+
+.dashboard-header{
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+    position: fixed;
+    left: 300px;
+    width: calc(100% - 330px);
+    top: 0;
+    z-index: 100;
+    transition: left 300ms;
+}
+
+#nav-toggle{
+    display: none;
+}
+
+.dashboard-header h2{
+    color: black;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+/*menu icon*/
+.dashboard-header label .dashboard-icon-menu{
+    width: 25px;
+    padding-right: 16px;
+    align-items: center;
+    cursor: pointer;
+}
+
+.dashboard-notification{
+    display: flex;
+    align-items: center;
+    margin-right: -70px;
+}
+
+.dashboard-notification .icon-notification{
+    width: 25px;
+    padding-top: 8px;
+    margin-left: 770px;
+}
+
+.dashboard-user-wrapper{
+    display: flex;
+    align-items: center;
+    margin-left: auto; 
+    padding-right: 16px;
+}
+
+.dashboard-user-wrapper img{
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.dashboard-user-wrapper h4, .dashboard-user-wrapper small {
+    margin: 0; 
+}
+
+/*service provider text color*/
+.dashboard-user-wrapper small{
+    display: inline-block;
+    color: blueviolet;
+}
+
+
+main{
+    margin-top: 75px;
+    padding: 32px 24px;
+    background-color: #f1f5f9;
+    min-height: calc(100vh - 90px);
+}
+
+.dashboard-cards{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-gap: 32px;
+    margin-top: 16px;
+}
+
+.dashboard-card-single{
+    display: flex;
+    justify-content: space-between;
+    background: #fff;
+    padding: 32px;
+    border-radius: 3px;
+}
+
+.dashboard-card-single div:last-child span{
+    font-size: 48px;
+    color: #504d4d;
+}
+
+.dashboard-card-single div:first-child span{
+    color: #504d4d;
+}
+
+.dashboard-card-single:last-child{
+    background: rgb(224, 220, 220);
+}
+
+.recent-grid{
+    margin-top: 55px;
+    display: grid;
+    grid-gap: 32px;
+    grid-template-columns: 74% auto;
+}
+
+.card{
+    background: #fff;
+    border-radius: 5px;
+}
+
+.card-header{
+    padding: 16px;
+}
+
+.card-header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.card-header button{
+    background: rgb(0, 0, 0);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 12px;
+    padding: 8px 16px;
+    border: 1px solid black;
+}
+
+table{
+    border-collapse: collapse;
+}
+
+
+thead tr{
+    border-top: 1px solid #f0f0f0;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+thead td{
+    font-weight: 700;
+}
+
+td{
+    padding: 8px 16px;
+    font-size: 14px;
+    color: #222;
+}
+
+.with-button {
+    position: relative;
+}
+
+.view-button {
+    position: absolute;
+    top: 50%;
+    left: 150px;
+    transform: translateY(-50%);
+    padding: 5px 10px;
+    background-color: #3498db; /* Button background color */
+    color: #fff; /* Button text color */
+    border: 1px solid #3498db;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 10px;
+}
+
+.view-button:hover {
+    background-color: #7ca8c5; /* Change the background color on hover */
+}
+
+.accept-button {
+    background-color: #2ecc71;
+    color: #fff; 
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: 5px;
+    margin-right: 10px;
+    padding: 5px 10px;
+    cursor: pointer;
+    border: 1px solid #2ecc71;
+}
+
+.decline-button {
+    background-color: #e74c3c;
+    color: #fff; 
+    color: #fff; 
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: 5px;
+    margin-right: 10px;
+    padding: 5px 10px;
+    cursor: pointer;
+    border: 1px solid #e74c3c;
+}
+
+/* Hover effect for buttons */
+.action-button:hover {
+    opacity: 0.8; 
+}
+
+.table-responsive{
+    width: 100%;
+    overflow-x: auto;
+}
+
+.customer{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .5rem 1rem;
+}
+
+.info{
+    display: flex;
+    align-items: center;
+}
+
+.info img{
+    border-radius: 50%;
+    margin-right: 16px;
+}
+
+.info h4{
+    font-size: .8rem;
+    font-weight: 700;
+    color: #222;
+}
+
+.info small{
+    font-weight: 400;
+    color: gray;
+}
+
+.contact .card-icon {
+    width: 25px;
+    
+}

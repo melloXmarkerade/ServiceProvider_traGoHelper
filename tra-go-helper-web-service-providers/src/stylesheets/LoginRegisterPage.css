@@ -1,0 +1,583 @@
+.login-register-background {
+    width: 100%;
+    height: 100vh;
+    background: url(../assets/road-assistance.png) no-repeat;
+    background-size: cover;
+    background-position: center;
+}
+
+.login-register-container {
+    position: absolute;
+    top: 53%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60%;
+    height: 750px;
+    background: black;
+    background-size: cover;
+    background-position: center;
+    border-radius: 10px;
+    margin-top: 5px;
+    box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.5), -10px -10px 10px rgba(0, 0, 0, 0.5);
+}
+
+.login-register-container .left-side-content {
+    position: absolute;
+    top: 0%;
+    left: 0%;
+    width: 50%;
+    height: 100%;
+    background-image: url(../assets/backgrouund.png);
+    background-repeat: no-repeat;
+    background-size: cover;
+    border-radius: 10px 0 0 10px;
+}
+
+.left-side-content .left-side-logo-image {
+    width: 400px;
+    position: absolute;
+    top: 55px;
+    left: 25px;
+}
+
+.left-side-content .left-side-text {
+    position: absolute;
+    top: 66%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.left-side-content .left-side-text .left-caption-content {
+    color: rgb(251, 251, 251);
+    font-size: 18px;
+    white-space: nowrap;
+}
+
+.login-register-container .logreg-box {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: calc(100% - 50%);
+    height: 100%;
+    background: url(../assets/road-assistance.png) no-repeat;
+    background-size: 195% auto;
+    background-position: right center;
+    border-radius: 0 10px 10px 0;
+    overflow: hidden;
+}
+
+.logreg-box .form-box {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    background: #ffffff;
+    border-radius: 0 10px 10px 0;
+}
+
+/*need to translateX to change the form to register*/
+.logreg-box .form-box.login {
+    transform: translateX(0);
+    transition: all .7s ease-in-out;
+    transition-delay: .7s;
+}
+
+.logreg-box.active .form-box.login {
+    transform: translateX(470px);
+    transition-delay: 0s;
+}
+
+/*Register Transition*/
+.logreg-box .form-box.register {
+    transform: translateX(470px);
+    border-radius: 0 10px 10px 0;
+    transition: all 0.6s ease-in-out;
+    transition-delay: 0s;
+}
+
+.logreg-box.active .form-box.register {
+    transform: translateX(0);
+    transition-delay: .7s;
+}
+
+.form-box .header-login-content,
+.header-register-content {
+    font-size: 35px;
+    font-weight: bold;
+    text-align: center;
+    color: black;
+    margin-bottom: 10px;
+}
+
+.form-box .paragraph-login-content,
+.paragraph-register-content {
+    font-weight: 100;
+    font-size: 18px;
+    color: rgb(3, 3, 3);
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.form-box .login-input-box {
+    position: relative;
+    width: 340px;
+    height: 50px;
+    margin: 20px 0;
+    display: flex;
+}
+
+.login-input-box input {
+    height: 100%;
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: black;
+    padding-left: 45px;
+    padding-right: 15px;
+    border-bottom: 1px solid #000000;
+}
+
+.login-input-box .login-icon-email {
+    width: 40px;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.login-input-box .login-icon-password {
+    height: 35px;
+    width: 40px;
+    position: absolute;
+    top: 40%;
+    transform: translateY(-50%);
+}
+
+.form-box .login-input-box input:focus,
+.form-box .login-input-box input:valid {
+    border-bottom: 2px solid #41a541;
+}
+
+.form-box .login-forgot {
+    font-weight: 500;
+    text-align: right;
+}
+
+.login-forgot a {
+    text-decoration: none;
+    color: #000000;
+    font-weight: 500;
+    transition: .5s;
+}
+
+.login-forgot a:hover {
+    text-decoration: underline;
+    color: #cc0000;
+}
+
+.login-btn {
+    width: 100%;
+    height: 45px;
+    border: none;
+    outline: none;
+    background-color: #000000;
+    font-weight: bold;
+    border-radius: 5px;
+    transition: .4s;
+    color: #fff;
+    margin-top: 25px;
+}
+
+.login-btn:hover {
+    background-color: rgba(206, 63, 63, 0.9);
+    color: #fff;
+    font-weight: bold;
+}
+
+.form-box .login-register {
+    font-size: medium;
+    text-align: center;
+    margin-top: 50px;
+    color: #000000;
+}
+
+.login-register a {
+    color: #CE3F3F;
+    font-weight: 700;
+    text-decoration: none;
+    transition: .5s;
+}
+
+.login-register span a:hover {
+    text-decoration: underline;
+}
+
+
+/*progress bar*/
+.progressbar {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    counter-reset: step;
+    margin-top: -5px;
+    margin-bottom: 45px;
+}
+
+.progressbar::before,
+.progress {
+    content: "";
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 4px;
+    width: 100%;
+    background-color: gray;
+    z-index: 1;
+}
+
+.progress {
+    background-color: #41a541;
+    width: 0%;
+}
+
+.progress-step {
+    width: 25px;
+    height: 25px;
+    background-color: gray;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+    /* Set a higher z-index */
+}
+
+.progress-step::before {
+    counter-increment: step;
+    content: counter(step);
+}
+
+.progress-step::after {
+    content: attr(data-title);
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    font-size: 12px;
+    color: gray;
+}
+
+.progress-step-active {
+    background-color: #41a541;
+    color: white;
+}
+
+
+/*steps*/
+.step {
+    display: none;
+    transform-origin: top;
+    animation: animate 0.5s;
+}
+
+.step-active {
+    display: block;
+}
+
+@keyframes animate {
+    from {
+        transform: scale(1, 0);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1, 1);
+        opacity: 1;
+    }
+}
+
+/*floating textfield for register*/
+.register-input-box {
+    width: 340px;
+    position: relative;
+    margin-bottom: 18px;
+}
+
+.register-input-box .register-label {
+    position: absolute;
+    left: 10px;
+    top: 12px;
+    transition: all 0.2s;
+    padding: 0 2px;
+    z-index: 1;
+    color: #9c9b9b;
+    font-size: 13px;
+}
+
+.register-input-box .register-label::before {
+    content: "";
+    height: 15px;
+    background-color: #ffffff;
+    position: absolute;
+    left: 0;
+    top: 5px;
+    width: 100%;
+    z-index: -1;
+}
+
+.register-text-input {
+    padding: 0.7rem;
+    width: 92%;
+    height: 100%;
+    border: 1px solid #382f26;
+    background: white;
+    outline: none;
+    transition: all .3s;
+    color: rgb(0, 0, 0);
+    border-radius: 5px;
+}
+
+.register-text-input:focus {
+    border: 1px solid #41a541;
+}
+
+.register-text-input:focus+.register-label,
+.filled,
+.register-text-input:valid+.register-label {
+    top: -8px;
+    color: #8b8989;
+    font-size: 12px;
+}
+
+
+.register-text-input::placeholder {
+    font-size: 12px;
+    color: #c2c1c1;
+    opacity: 0;
+    transition: all .3s;
+}
+
+.register-text-input:focus::placeholder {
+    opacity: 1;
+    animation-delay: 0.2;
+}
+
+.form-box .register-login {
+    font-size: medium;
+    text-align: center;
+    margin-top: 22px;
+    color: #000000;
+}
+
+.register-login a {
+    color: #CE3F3F;
+    font-weight: 700;
+    text-decoration: none;
+    transition: .5s;
+}
+
+.register-loginr span a:hover {
+    text-decoration: underline;
+}
+
+
+/*buttons for next, prev, and submit*/
+.form-box .button-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem;
+}
+
+.register-btn-prev,
+.register-btn-next,
+.register-btn-submit {
+    width: 100%;
+    height: 45px;
+    border: none;
+    outline: none;
+    background-color: #000000;
+    font-weight: bold;
+    border-radius: 5px;
+    transition: .4s;
+    color: #fff;
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+
+.register-btn-prev:hover {
+    background-color: rgba(206, 63, 63, 0.9);
+    color: #fff;
+    font-weight: bold;
+}
+
+.register-btn-next:hover {
+    background-color: rgba(206, 63, 63, 0.9);
+    color: #fff;
+    font-weight: bold;
+}
+
+.register-btn-submit:hover {
+    background-color: rgba(206, 63, 63, 0.9);
+    color: #fff;
+    font-weight: bold;
+}
+
+
+/*textArea for business description*/
+.register-text-area {
+    width: 100%;
+    height: fit-content;
+}
+
+.floating-label {
+    width: 320px;
+    position: relative;
+    margin-bottom: 15px;
+}
+
+.floating-label .label-text-area {
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    transition: all 0.2s;
+    padding: 0 2px;
+    z-index: 1;
+    color: #9c9b9b;
+    font-size: 13px;
+}
+
+.floating-label .text-area-input {
+    padding: 0.5rem;
+    width: 100%;
+    height: 100%;
+    border: 1px solid #382f26;
+    background: white;
+    outline: none;
+    transition: all .3s;
+    color: rgb(0, 0, 0);
+    border-radius: 5px;
+}
+
+.floating-label .label-text-area::before {
+    content: "";
+    height: 15px;
+    background-color: #ffffff;
+    position: absolute;
+    left: 0;
+    top: 5px;
+    width: 100%;
+    z-index: -1;
+}
+
+.text-area-input:focus {
+    border: 1px solid #41a541;
+}
+
+.floating-label .text-area-input:focus+.label-text-area,
+.floating-label .filled,
+.floating-label .text-area-input:valid+.label-text-area {
+    top: -8px;
+    color: #8b8989;
+    font-size: 12px;
+}
+
+
+.text-area-input::placeholder {
+    padding-top: 5px;
+    font-size: 12px;
+    color: #c2c1c1;
+    opacity: 0;
+    transition: all .3s;
+}
+
+.text-area-input:focus::placeholder {
+    opacity: 1;
+    animation-delay: 0.2;
+}
+
+/* Checkbox button for Service Offers */
+.register-center {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.register-menu {
+    width: 340px;
+}
+
+.register-title {
+    width: 100%;
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.register-menu-container {
+    height: 200px;
+    overflow-y: auto;
+    background: #ffffff;
+    margin-bottom: 15px;
+}
+
+.register-menu-list div {
+    margin-top: 5px;
+}
+
+.register-menu-list label {
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.register-menu-list input:checked+label {
+    color: #41a541;
+}
+
+/*file upload*/
+.input-box-file {
+    position: relative;
+    width: 340px;
+    margin-bottom: 5px;
+
+}
+
+.title-file {
+    font-size: 15px;
+    color: #000000;
+    padding-bottom: 10px;
+}
+
+.input-box-file .input-file {
+    position: relative;
+    border: 1px solid #000000;
+    padding: 8px;
+    width: 320px;
+    height: 25px;
+    border-radius: 5px;
+    border-radius: 5px;
+}
+
+.input-box-file .input-file::-webkit-file-upload-button {
+    background-color: #41a541;
+    width: 125px;
+    color: #ffffff;
+    border-radius: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    margin-right: 5px;
+    cursor: pointer;
+    border: none;
+}
+
+.input-box-file input[type='file']::-webkit-file-upload-button:hover {
+    background-color: #414641;
+}
