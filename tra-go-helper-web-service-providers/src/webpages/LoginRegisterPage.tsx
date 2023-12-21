@@ -5,68 +5,46 @@ import { db, auth, storageRef } from '../firebase';
 import ErrorModal from './ErrorModal';
 import SuccessModal from './SuccessModal';
 import EmptyFieldModal from './EmptyFieldModal';
+import { useUserContext } from './UserContext';
 
 const LoginRegisterWebpage: React.FC = () => {
     //Login
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
+    const { setUserData } = useUserContext();
+
     //Valdation Modal
     const [showModal, setShowModal] = useState(false);
     const [fieldsEmpty, setFieldsEmpty] = useState(false);
     
-    const handleLogin = async () => {
+    const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+    
         try {
-
-        //   //enable this when all are set, this validation will only accept login accepted users (not Tested yet it will be tested later down the line) Make sure to comment the code after this in order to work properly
-          
-        //   const { user } = await firebase.auth().signInWithEmailAndPassword(email, password);
-        //   if (user) {
-        //     // Get user data from the Realtime Database
-        //     const userSnapshot = await firebase.database().ref(`serviceProvider/${user.uid}`).once('value');
-        //     const userData = userSnapshot.val();
-          
-        //     if (userData && userData.status === 'Accepted') {
-        //       console.log(`User ID: ${user.uid}`);
-        //       console.log(`Email: ${user.email}`);
-          
-        //       // Redirect to the dashboard or perform other actions
-        //       // Example using Navigate from React Router:
-        //       // Note: This assumes you have a <Route path="/dashboard" ... /> defined in your React Router setup
-        //       window.location.href = '/dashboard';
-        //     } else {
-        //       // Display an error message for unaccepted accounts
-        //       setErrorMessage('Your account has not been accepted yet. Please wait for approval.');
-        //       setShowModal(true);
-          
-        //       // Sign out the user since the account is not accepted
-        //       await firebase.auth().signOut();
-        //     }
-        //   } else {
-        //     // Handle the case where user is null (sign-in failed)
-        //     setErrorMessage('Sign-in failed. Please check your credentials and try again.');
-        //     setShowModal(true);
-        //   }
-            
-        // Sign in with email and password
+          // Sign in with email and password
           await firebase.auth().signInWithEmailAndPassword(email, password);
+    
           // Get the current user
           const currentUser = firebase.auth().currentUser;
+    
           // Store user data in the Realtime Database
           if (currentUser) {
             const uid = currentUser.uid;
-            const email = currentUser.email;
-
-            await firebase.database().ref(`users/${currentUser.uid}`).set({
-              email: currentUser.email,
-              // Additional user data can be stored here
-            });
-            
+            const userEmail = currentUser.email;
+    
+            // Fetch additional user data from the Realtime Database
+            const userSnapshot = await firebase.database().ref(`users/${uid}`).once('value');
+            const userData = userSnapshot.val();
+    
+            // Update the global state with user data
+            setUserData(userData);
+    
             console.log(`User ID: ${uid}`);
-            console.log(`Email: ${email}`);
+            console.log(`Email: ${userEmail}`);
+    
             // Redirect to the dashboard or perform other actions
-            // Example using Navigate from React Router:
-            // Note: This assumes you have a <Route path="/dashboard" ... /> defined in your React Router setup
+            console.log('Logging in');
             window.location.href = '/dashboard';
           }
         } catch (error) {
@@ -165,8 +143,12 @@ const LoginRegisterWebpage: React.FC = () => {
           formData.password,
         );
         
+        const currentUser = firebase.auth().currentUser;
 
-        
+        if (currentUser) {
+         // Get the UID of the newly pushed data
+         const userUID = currentUser?.uid;
+
         const selectedServicesArray = Object.entries(formData.selectedServices)
         .filter(([_, selected]) => selected)
         .map(([service, _]) => service);
@@ -202,39 +184,33 @@ const LoginRegisterWebpage: React.FC = () => {
             const profilePicturePhotoFileURL = await profilePicturePhotoFileRef.getDownloadURL();
 
 
-
-        // Save additional user information to the database
-        await db.ref('RequestAcc').push({
-          email: formData.email,
-          password: formData.password,
-          Confirmpassword: formData.Confirmpassword,
-          FirstName: formData.firstname,
-          MiddleName: formData.middlename,
-          LastName: formData.lastname,
-          ShopName: formData.shopname,
-          username: formData.username,
-          busineesContactNum: formData.busineesContactNum,
-          businessType: formData.businessType,
-          businessAddress: formData.businessAddress,
-          businessRegistrationNum: formData.businessRegistrationNum,
-          dateofEstablishment: formData.dateofEstablishment,
-          businessOperatingHours: formData.businessOperatingHours,
-          businessDescription: formData.businessDescription,
-          selectedServices: selectedServicesArray,
-          businessPermitFileURL,
-          identificationPhotoFileURL,
-          profilePicturePhotoFileURL,  
-          status: 'Pending',
-          // Add other user information here
-        });
-        const serviceProviderRef = db.ref('serviceProvider');
-        const newServiceProviderRef = serviceProviderRef.push({
+            // Save additional user information to the database
+            await db.ref('RequestAcc').push({
             email: formData.email,
             password: formData.password,
             Confirmpassword: formData.Confirmpassword,
             FirstName: formData.firstname,
             MiddleName: formData.middlename,
             LastName: formData.lastname,
+            ShopName: formData.shopname,
+            username: formData.username,
+            busineesContactNum: formData.busineesContactNum,
+            businessType: formData.businessType,
+            businessAddress: formData.businessAddress,
+            businessRegistrationNum: formData.businessRegistrationNum,
+            dateofEstablishment: formData.dateofEstablishment,
+            businessOperatingHours: formData.businessOperatingHours,
+            businessDescription: formData.businessDescription,
+            selectedServices: selectedServicesArray,
+            businessPermitFileURL,
+            identificationPhotoFileURL,
+            profilePicturePhotoFileURL,  
+            status: 'Pending',
+          // Add other user information here
+             });
+            await db.ref(`serviceProvider/${userUID}`).set({
+            email: formData.email,
+            FullName: `${formData.firstname || ''} ${formData.middlename || ''} ${formData.lastname || ''}`,
             name: formData.shopname,
             username: formData.username,
             businessType: formData.businessType,
@@ -253,23 +229,19 @@ const LoginRegisterWebpage: React.FC = () => {
             type: 'tires',
             userUID: '', // Placeholder for now
             // Add other user information here
-        });
+             });
 
-        // Get the UID of the newly pushed data
-        const userUID = newServiceProviderRef.key;
-
-        // Update the data with the retrieved UID
-        newServiceProviderRef.update({
-        userUID,
-        });
-
+             // Update the data with the retrieved UID
+             await db.ref(`serviceProvider/${userUID}`).update({
+            userUID,
+            });
           
   
-        // Continue with the registration process or redirect the user
-        console.log('User registered successfully:', userCredential.user);
+         // Continue with the registration process or redirect the user
+         console.log('User registered successfully:', userCredential.user);
 
-        // Reset form data after successful registration
-        setFormData({
+         // Reset form data after successful registration
+         setFormData({
             email: '',
             password: '',
             Confirmpassword: '',
@@ -290,12 +262,14 @@ const LoginRegisterWebpage: React.FC = () => {
             businessDescription: '',
             status: 'Pending',
             selectedServices: {},
-        });
-        setShowSuccessModal(true);
+             });
+            setShowSuccessModal(true);
 
-        setTimeout(() => {
+            setTimeout(() => {
             window.location.reload();
           }, 5000); // 3000 milliseconds = 3 seconds
+
+        }
   
       } catch (error) {
         console.error('Error registering user:', error);
@@ -422,7 +396,7 @@ const LoginRegisterWebpage: React.FC = () => {
                 {/*For Login*/}
                 <div className={`logreg-box ${showRegisterForm ? 'active' : ''}`}>
                     <div className='form-box login'>
-                     <form>
+                     <form onSubmit={handleLogin}>
                             <header className='header-login-content'>Login</header>
                             <p className='paragraph-login-content'>Login to access your account</p>
 
@@ -439,7 +413,7 @@ const LoginRegisterWebpage: React.FC = () => {
                             <div className='login-forgot'>
                                 <a href='#'>Forgot Password?</a>
                             </div>
-                                <button type='submit' className='login-btn' onClick={handleLogin}>Login</button>
+                                <button type='submit' className='login-btn'>Login</button>
                                 {showModal && <ErrorModal errorMessage={errorMessage} onClose={closeModal} />}
                                 {showModal && (<ErrorModal errorMessage={fieldsEmpty ? 'Please fill in all fields.' : errorMessage} onClose={closeModal}/>)}
                             <div className='login-register'>
