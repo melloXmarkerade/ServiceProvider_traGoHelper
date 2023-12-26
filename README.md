@@ -1,0 +1,7 @@
+BEFORE RUNNING
+
+INSTALL NPM 
+
+then 
+
+NPM START
