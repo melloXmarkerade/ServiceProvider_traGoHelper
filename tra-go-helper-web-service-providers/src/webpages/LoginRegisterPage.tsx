@@ -210,7 +210,7 @@ const LoginRegisterWebpage: React.FC = () => {
              });
             await db.ref(`serviceProvider/${userUID}`).set({
             email: formData.email,
-            FullName: `${formData.firstname || ''} ${formData.middlename || ''} ${formData.lastname || ''}`,
+            ownerName: `${formData.firstname || ''} ${formData.middlename || ''} ${formData.lastname || ''}`,
             name: formData.shopname,
             username: formData.username,
             businessType: formData.businessType,

@@ -7,7 +7,9 @@ import { useUserContext } from './UserContext';
 import firebase from 'firebase';
 
 interface UserData {
-    ShopName: string;
+    email: string;
+    name: string;
+    profilePicture: string;
     // Add other properties as needed
   }
 
@@ -15,36 +17,85 @@ const DashboardWebpage: React.FC = () => {
     //Declarations
     const [activeMenuItem, setActiveMenuItem] = useState<string>('dashboard')
     const [userData, setUserData] = useState<UserData | null>(null);
- 
+
     useEffect(() => {
-        const fetchAndSaveUserData = async () => {
-          try {
-            const currentUser = firebase.auth().currentUser;
-    
-            if (currentUser) {
-              const uid = currentUser.uid;
-    
+        const unsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
+          if (user) {
+            try {
+              const uid = user.uid;
+      
+              // Fetch existing data from the serviceProvider node
+              const serviceProviderSnapshot = await firebase.database().ref(`serviceProvider/${uid}`).once('value');
+              const existingServiceProviderData = serviceProviderSnapshot.val() || {};
+      
               // Fetch additional user data from the Realtime Database
               const userSnapshot = await firebase.database().ref(`users/${uid}`).once('value');
               const fetchedUserData = userSnapshot.val();
-    
-              // Save fetchedUserData to the Realtime Database
-              await firebase.database().ref(`serviceProvider/${uid}`).set({
-                ShopName: fetchedUserData?.ShopName || 'DefaultShopName',
+      
+              // Combine existing data with new values (ShopName in this case)
+              const userDataToDisplay = {
+                name: fetchedUserData?.name || 'DefaultShopName',
+                profilePicture: fetchedUserData?.profilePicture || null, // Assuming profilePicture is a URL
                 // Add other properties as needed
-              });
-    
-              console.log('User data saved to the database');
-              setUserData(fetchedUserData); // Update state with fetched data
+                ...existingServiceProviderData,
+              };
+              
+              console.log('User data fetched from the database:', userDataToDisplay);
+              console.log('User data fetched from the database');
+              setUserData(userDataToDisplay); // Update state with fetched data
+            } catch (error) {
+              console.error('Error fetching user data:', error);
             }
-          } catch (error) {
-            console.error('Error fetching or saving user data:', error);
+          } else {
+            console.error('User not authenticated');
+            // You may want to redirect to a login page or handle the unauthenticated state in another way
           }
-        };
-    
-        // Trigger the fetchAndSaveUserData function when the component mounts
-        fetchAndSaveUserData();
+        });
+      
+        // Clean up the subscription when the component unmounts
+        return () => unsubscribe();
       }, []);
+       // Dependency array is empty to run the effect only once when the component mounts
+    
+ 
+    // useEffect(() => {
+    //     const fetchAndSaveUserData = async () => {
+    //       try {
+    //         const currentUser = firebase.auth().currentUser;    
+            
+    //         if (!currentUser) {
+    //             // Handle the case where the user is not authenticated
+    //             console.error('User not authenticated');
+    //             return;
+    //           }
+            
+    //         if (currentUser) {
+    //           const uid = currentUser.uid;
+    
+    //           // Fetch additional user data from the Realtime Database
+    //           const userSnapshot = await firebase.database().ref(`users/${uid}`).once('value');
+    //           const fetchedUserData = userSnapshot.val();
+    
+    //           // Save fetchedUserData to the Realtime Database
+    //           await firebase.database().ref(`serviceProvider/${uid}`).set({
+    //             ShopName: fetchedUserData?.ShopName || 'DefaultShopName',
+    //             // Add other properties as needed
+    //           });
+              
+    //           console.log('Fetched User Data:', fetchedUserData);
+    //           setUserData(fetchedUserData);
+    
+    //           console.log('User data saved to the database');
+    //           setUserData(fetchedUserData); // Update state with fetched data
+    //         }
+    //       } catch (error) {
+    //         console.error('Error fetching or saving user data:', error);
+    //       }
+    //     };
+    
+    //     // Trigger the fetchAndSaveUserData function when the component mounts
+    //     fetchAndSaveUserData();
+    //   }, []);
 
     //notification
     const [notificationCount, setNotificationCount] = useState(3);
@@ -195,9 +246,9 @@ const DashboardWebpage: React.FC = () => {
                     </div>
 
                     <div className='dashboard-user-wrapper'>
-                        <img src={require('../assets/profile.jpg')} width="40px" height="40px" alt="" className="profile-icon" />
+                        <img src={userData?.profilePicture} width="40px" height="40px" alt="" className="profile-icon" />
                         <div>
-                            <h4 className='dashboard-h4'>{userData?.ShopName || 'UserName'}</h4>
+                            <h4 className='dashboard-h4'>{userData?.name || 'UserName'}</h4>
                             <small className='dashboard-small'>Service Provider</small>
                         </div>
                     </div>
