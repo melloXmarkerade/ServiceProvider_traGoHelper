@@ -1,0 +1,92 @@
+.settings-container {
+    text-align: center;
+  }
+  
+  .big-image {
+    max-width: 100%; /* Ensure the image doesn't exceed its container width */
+    margin-bottom: 20px; /* Adjust margin as needed */
+  }
+  
+  .button-container {
+    display: flex;
+    flex-direction: column; /* Arrange buttons in a column */
+    align-items: center; /* Center buttons horizontally */
+  }
+  
+  .custom-button {
+    background-color: white;
+    border: 2px solid black;
+    color: black;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    margin: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+.termsandcoditions-container {
+  font-family: 'Arial', sans-serif;
+  padding: 20px;
+  margin: 20px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: justify;
+  line-height: 1.5;
+}
+
+.accept-decline-buttons {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.accept-decline-buttons button {
+  margin-right: 10px;
+  padding: 10px 20px; 
+  background-color: #4caf50;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+
+p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.modal-content {
+  font-family: 'Arial', sans-serif;
+  max-width: 1000px; 
+  margin: 20px auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  text-align: center;
+}
+
+.modal-content input[type="password"] {
+  width: 90%; 
+  margin-bottom: 15px; 
+  padding: 10px; 
+  margin: 10px;
+}
+
+.modal-content button {
+  padding: 10px;
+  background-color: #4caf50;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); 
+}
+
+
+
+
+  

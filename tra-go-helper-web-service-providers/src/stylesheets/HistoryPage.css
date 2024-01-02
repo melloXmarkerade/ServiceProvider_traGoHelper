@@ -1,0 +1,71 @@
+.table {
+    font-family: arial, sans-serif;
+    font-size: 19px;
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+  }
+  
+  td, th {
+    border: none;
+    text-align: center;
+    padding: 10px;
+    width: 200px; 
+  }
+  
+  .AccountButton {
+    display: flex;
+    align-items: center;
+    justify-content: center; 
+  }
+  
+  .button-like,
+  button.back {
+    padding: 8px 16px; 
+    font-size: 14px; 
+    cursor: pointer;
+    border-radius: 4px;
+    border: none;
+    text-align: center;
+    text-decoration: none;
+    opacity: 0.5;
+  }
+  
+  .button-like:hover,
+  button.back:hover {
+    opacity: 1; 
+  }
+  
+  .button-like {
+    background-color: #007bff;
+    color: #fff;
+    margin: 5px;
+    width: 70px;
+    height: 50px;
+  }
+  
+  .button-like:hover {
+    background-color: #0056b3;
+  }
+ 
+  button.back {
+    background-color: #2196f3;
+  }
+  
+  button:hover {
+    filter: brightness(1.2);
+  }
+  
+  .loading {
+    color: black;
+  }
+  
+  .Border {
+    box-shadow: 1px 10px 5px 5px gray; 
+  }
+  
+  @media (max-width: 1080px) {
+    .table {
+      width: 100%; 
+    }
+  }

@@ -3,20 +3,25 @@ import { Link } from 'react-router-dom';
 import HistoryWebpage from './HistoryPage';
 import SettingWebpage from './SettingPage';
 import '../stylesheets/DashboardPage.css';
-import { useUserContext } from './UserContext';
 import firebase from 'firebase';
+import Modal from 'react-modal';
 
 interface UserData {
     email: string;
     name: string;
-    profilePicture: string;
-    // Add other properties as needed
+    profilePicture: string ;
+    status: string;
+    ID: string; 
+    FirstName: string;
+    LastName: string;
+    MiddleName: string;
   }
 
 const DashboardWebpage: React.FC = () => {
-    //Declarations
     const [activeMenuItem, setActiveMenuItem] = useState<string>('dashboard')
-    const [userData, setUserData] = useState<UserData | null>(null);
+    const [isModalOpen, setModalOpen] = useState(false);
+    const [isProfileOpen, setProfileOpen] = useState(false);
+    const [user, setUserData] = useState<UserData | null>(null);
 
     useEffect(() => {
         const unsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
@@ -24,37 +29,32 @@ const DashboardWebpage: React.FC = () => {
             try {
               const uid = user.uid;
       
-              // Fetch existing data from the serviceProvider node
               const serviceProviderSnapshot = await firebase.database().ref(`serviceProvider/${uid}`).once('value');
               const existingServiceProviderData = serviceProviderSnapshot.val() || {};
-      
-              // Fetch additional user data from the Realtime Database
+
               const userSnapshot = await firebase.database().ref(`users/${uid}`).once('value');
               const fetchedUserData = userSnapshot.val();
       
-              // Combine existing data with new values (ShopName in this case)
               const userDataToDisplay = {
                 name: fetchedUserData?.name || 'DefaultShopName',
-                profilePicture: fetchedUserData?.profilePicture || null, // Assuming profilePicture is a URL
-                // Add other properties as needed
+                profilePicture: fetchedUserData?.profilePicture || null, 
                 ...existingServiceProviderData,
               };
               
               console.log('User data fetched from the database:', userDataToDisplay);
               console.log('User data fetched from the database');
-              setUserData(userDataToDisplay); // Update state with fetched data
+              setUserData(userDataToDisplay); 
             } catch (error) {
               console.error('Error fetching user data:', error);
             }
           } else {
-            console.error('User not authenticated');
-            // You may want to redirect to a login page or handle the unauthenticated state in another way
+            console.error('User not authenticated. Wait for Admin to approved the account');
           }
         });
-      
-        // Clean up the subscription when the component unmounts
+
         return () => unsubscribe();
       }, []);
+
        // Dependency array is empty to run the effect only once when the component mounts
     
  
@@ -132,6 +132,15 @@ const DashboardWebpage: React.FC = () => {
 
     const closeModal = () => {
         setModalVisible(false);
+    };
+
+    const openProfile = () => {
+        setProfileOpen(true);
+
+    };
+
+    const closeProfile = () => {
+        setProfileOpen(false);
     };
 
     // //map
@@ -245,15 +254,84 @@ const DashboardWebpage: React.FC = () => {
                         </a>
                     </div>
 
-                    <div className='dashboard-user-wrapper'>
-                        <img src={userData?.profilePicture} width="40px" height="40px" alt="" className="profile-icon" />
+                    <div className='dashboard-user-wrapper' onClick={openProfile}>
+                        <img src={user?.profilePicture} width="40px" height="40px" alt="" className="profile-icon" />
                         <div>
-                            <h4 className='dashboard-h4'>{userData?.name || 'UserName'}</h4>
+                            <h4 className='dashboard-h4'>{user?.name || 'UserName'}</h4>
                             <small className='dashboard-small'>Service Provider</small>
                         </div>
                     </div>
-                </header>
 
+                {/* Modal Account Profile*/}
+                <Modal
+                    isOpen={isProfileOpen}
+                    onRequestClose={closeProfile}
+                    contentLabel="Account Profile"
+                    style={{
+                    overlay: {
+                        zIndex: 1000,
+                    },
+                    content: {
+                        zIndex: 1001,
+                    },
+                    }}
+                >
+                    <div>
+                    <h2>Account Profile</h2>
+                    <div className="Account-panel">
+                        {user? (
+                        <div className="DetailsPanel">
+                            <div className="DetailForm">
+                            <table className="AProfileTable">
+                                <tbody>
+                                <tr>
+                                    <td>ID:</td>
+                                    <td>
+                                    <span className='user-detail'>{user.ID}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>First Name:</td>
+                                    <td>
+                                    <span className='user-detail'>{user.FirstName}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Last Name:</td>
+                                    <td>
+                                    <span className='user-detail'>{user.LastName}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Middle Name:</td>
+                                    <td>
+                                    <span className='user-detail'>{user.MiddleName}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Shop Name:</td>
+                                    <td>
+                                    <span className='user-detail'>{user.name}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Email:</td>
+                                    <td>
+                                    <span className='user-detail'>{user.email}</span>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                            </div>
+                        </div>
+                        ) : (
+                        <p>Loading...</p>
+                        )}
+                    </div>
+                    <button onClick={closeProfile}>Close</button>
+                    </div>
+                </Modal>
+                </header>
                 {/*Notifications*/}
                 {NotifModalVisible && (
                     <div className="notification-modal" id="notificationModal">
