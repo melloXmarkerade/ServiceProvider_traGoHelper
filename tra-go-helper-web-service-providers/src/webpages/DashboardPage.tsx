@@ -12,48 +12,186 @@ interface UserData {
     profilePicture: string ;
     status: string;
     ID: string; 
-    FirstName: string;
-    LastName: string;
-    MiddleName: string;
+    ownerName: string;
+    userUID: string;
+  }
+
+  interface RequestData {
+    requestUID: string;
+    serviceProviderEmail: string;
+    name: string;
+    progress: string;
+  }
+
+  interface vehicleOwnerData {
+    name: string;
+    email: string;
+    phoneNumber: string;
+    profilePicture: string;
+    userUID: string;
+    status: string;
   }
 
 const DashboardWebpage: React.FC = () => {
+    const [tableData, setTableData] = useState<vehicleOwnerData[]>([]);
     const [activeMenuItem, setActiveMenuItem] = useState<string>('dashboard')
     const [isModalOpen, setModalOpen] = useState(false);
     const [isProfileOpen, setProfileOpen] = useState(false);
     const [user, setUserData] = useState<UserData | null>(null);
+    const [requestUser, setRequestUser] = useState<RequestData | null>(null);
+    const [ownerUser, setOwnerUser] = useState<vehicleOwnerData | null>(null);
+    const [requestCount, setRequestCount] = useState(0);
 
     useEffect(() => {
-        const unsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
-          if (user) {
-            try {
+        const fetchData = async () => {
+          try {
+            const user = firebase.auth().currentUser;
+            if (user) {
               const uid = user.uid;
       
-              const serviceProviderSnapshot = await firebase.database().ref(`serviceProvider/${uid}`).once('value');
+              const [serviceProviderSnapshot, userSnapshot] = await Promise.all([
+                firebase.database().ref(`serviceProvider/${uid}`).once('value'),
+                firebase.database().ref(`users/${uid}`).once('value')
+              ]);
+      
               const existingServiceProviderData = serviceProviderSnapshot.val() || {};
-
-              const userSnapshot = await firebase.database().ref(`users/${uid}`).once('value');
               const fetchedUserData = userSnapshot.val();
       
-              const userDataToDisplay = {
+              const targetEmail = fetchedUserData?.email;
+      
+              if (user?.email && targetEmail !== null) {
+                const serviceProviderEmail = user.email;
+                const requestsRef = firebase.database().ref('serviceRequest').orderByChild('serviceProviderEmail').equalTo(serviceProviderEmail);
+      
+                const promises: Promise<void>[] = [];
+      
+                requestsRef.on('value', async (snapshot) => {
+                  let count = 0;
+      
+                  // Using for...of loop to allow await inside the loop
+                  snapshot.forEach((childSnapshot) => {
+                    const request: RequestData = childSnapshot.val();
+                  
+                    // monintoring data pass through through console
+                    console.log('Request:', request);
+                    console.log('Request email:', request.serviceProviderEmail);
+                    console.log('Owner UID:', request.requestUID);
+                  
+                    if (request.serviceProviderEmail === user?.email) {
+                      console.log('Request email matches target email');
+                      count++;
+                      const ownerUID = request.requestUID;
+                  
+                      console.log('Owner UID:', ownerUID);
+                  
+                      // Fetch owner UID from the service request
+                      if (ownerUID) {
+                        promises.push(
+                          (async () => {
+                            try {
+                              // Fetch owner data from the vehicleOwner table
+                              const ownerSnapshot = await firebase.database().ref(`vehicleOwner/${ownerUID}`).once(`value`);
+                              const ownerData = ownerSnapshot.val();
+                                
+                              if (ownerData) {
+                                // Display owner data
+                                const vehicleOwnerUserDataToDisplay: vehicleOwnerData = {
+                                    name: ownerData.name || 'OwnerName',
+                                    email: ownerData.email || 'email address for owner',
+                                    userUID: ownerData.userUID || 'RequestUID',
+                                    phoneNumber: ownerData.phoneNumber || 'phonenumber',
+                                    profilePicture: ownerData.profilePicture || 'profilePictureURL',
+                                    status: getStatusText(request.progress)  // Use request.progress instead of existingServiceProviderData.progress
+                                };
+                                console.log('request status:', request.progress);
+                                setOwnerUser(vehicleOwnerUserDataToDisplay);
+                                console.log('owner Name', vehicleOwnerUserDataToDisplay);
+
+                                 // Add owner data to tableData
+                                 setTableData((prevTableData) => [...prevTableData, vehicleOwnerUserDataToDisplay]);
+                              } else {
+                                console.error('Owner data not found.');
+                              }
+                            } catch (error) {
+                              console.error('Error fetching owner data:', error);
+                            }
+                          })()
+                        );
+                      } else {
+                        console.error('Owner UID not found in the service request.');
+                      }
+                    }
+                  })
+                  
+                  
+                  // Wait for all promises to resolve
+                  await Promise.all(promises);
+                  console.log('owner name: ' , ownerUser?.name);
+                  setRequestCount(count);
+                });
+              } else {
+                console.error('User email or target email is null.');
+              }
+      
+              const userDataToDisplay: UserData = {
                 name: fetchedUserData?.name || 'DefaultShopName',
-                profilePicture: fetchedUserData?.profilePicture || null, 
+                profilePicture: fetchedUserData?.profilePicture || null,
+                ownerName: fetchedUserData?.ownerName || null,
+                userUID: fetchedUserData?.userUID || null,
                 ...existingServiceProviderData,
               };
-              
+      
               console.log('User data fetched from the database:', userDataToDisplay);
-              console.log('User data fetched from the database');
-              setUserData(userDataToDisplay); 
-            } catch (error) {
-              console.error('Error fetching user data:', error);
+              setUserData(userDataToDisplay);
+            } else {
+              console.error('User not authenticated. Wait for Admin to approve the account');
             }
-          } else {
-            console.error('User not authenticated. Wait for Admin to approved the account');
+          } catch (error) {
+            console.error('Error fetching user data:', error);
           }
-        });
+        };
+      
+        const unsubscribe = firebase.auth().onAuthStateChanged(fetchData);
+      
+        // Unsubscribe from the 'value' event and AuthStateChanged when the component unmounts
+        return () => {
+          const requestsRef = firebase.database().ref('serviceRequest');
+          requestsRef.off('value');
+          unsubscribe();
+        };
+      }, [setRequestCount, setUserData, setTableData]);
 
-        return () => unsubscribe();
-      }, []);
+      const getStatusClass = (status: string) => {
+        switch (status) {
+            case "0":
+                return "status-pending";
+            case "1":
+                return "status-ongoing";
+            case "2":
+                return "status-success";
+            case "3":
+                return "status-cancel";
+            default:
+                return ""; // No class for unknown status
+        }
+    };
+
+      const getStatusText = (status: string) => {
+        console.log('ProgressOutput:',status)
+        switch (status) {
+            case "0":
+                return "Pending";
+            case "1":
+                return "Ongoing";
+            case "2":
+                return "Success";
+            case "3":
+                return "Canceled";
+            default:
+                return "Unknown Status";
+        }
+    };
+      
 
        // Dependency array is empty to run the effect only once when the component mounts
     
@@ -143,34 +281,34 @@ const DashboardWebpage: React.FC = () => {
         setProfileOpen(false);
     };
 
-    // //map
-    // useEffect(() => {
-    //     const script = document.createElement('script');
-    //     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`;
-    //     script.async = true;
-    //     script.defer = true;
-    //     document.head.appendChild(script);
+    //map
+    useEffect(() => {
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
 
-    //     return () => {
-    //         document.head.removeChild(script);
-    //     };
-    // }, [apiKey]);
+        return () => {
+            document.head.removeChild(script);
+        };
+    }, [apiKey]);
 
-    // useEffect(() => {
-    //     if (mapRef.current) {
-    //         const mapOptions = {
-    //             center: { lat: mapCoordinates.lat, lng: mapCoordinates.lng },
-    //             zoom: 14,
-    //         };
-    //         const map = new window.google.maps.Map(mapRef.current, mapOptions);
+    useEffect(() => {
+        if (mapRef.current) {
+            const mapOptions = {
+                center: { lat: mapCoordinates.lat, lng: mapCoordinates.lng },
+                zoom: 14,
+            };
+            const map = new window.google.maps.Map(mapRef.current, mapOptions);
 
-    //         const markerCoordinates = { lat: 10.3387, lng: 123.91194 };
-    //         const marker = new window.google.maps.Marker({
-    //             position: markerCoordinates,
-    //             map: map,
-    //         });
-    //     }
-    // }, [mapCoordinates]);
+            const markerCoordinates = { lat: 10.3387, lng: 123.91194 };
+            const marker = new window.google.maps.Marker({
+                position: markerCoordinates,
+                map: map,
+            });
+        }
+    }, [mapCoordinates]);
 
     //show chat message
     const toggleChat = () => {
@@ -287,25 +425,13 @@ const DashboardWebpage: React.FC = () => {
                                 <tr>
                                     <td>ID:</td>
                                     <td>
-                                    <span className='user-detail'>{user.ID}</span>
+                                    <span className='user-detail'>{user.userUID}</span>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td>First Name:</td>
+                                    <td>Full Name:</td>
                                     <td>
-                                    <span className='user-detail'>{user.FirstName}</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Last Name:</td>
-                                    <td>
-                                    <span className='user-detail'>{user.LastName}</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Middle Name:</td>
-                                    <td>
-                                    <span className='user-detail'>{user.MiddleName}</span>
+                                    <span className='user-detail'>{user.ownerName}</span>
                                     </td>
                                 </tr>
                                 <tr>
@@ -332,6 +458,8 @@ const DashboardWebpage: React.FC = () => {
                     </div>
                 </Modal>
                 </header>
+
+
                 {/*Notifications*/}
                 {NotifModalVisible && (
                     <div className="notification-modal" id="notificationModal">
@@ -384,15 +512,15 @@ const DashboardWebpage: React.FC = () => {
                     {activeMenuItem === 'dashboard' && (
                         <div>
                             <div className='dashboard-cards'>
-                                <div className='dashboard-card-single'>
-                                    <div>
-                                        <h1 className='card-h1'>54</h1>
-                                        <span>Total Request</span>
+                                    <div className='dashboard-card-single'>
+                                        <div>
+                                            <h1 className='card-h1'>{requestCount}</h1>
+                                            <span>Total Request</span>
+                                        </div>
+                                        <div>
+                                            <img src={require('../assets/icons8-email-48.png')} alt="" className="card-icon" />
+                                        </div>
                                     </div>
-                                    <div>
-                                        <img src={require('../assets/icons8-email-48.png')} alt="" className="card-icon" />
-                                    </div>
-                                </div>
 
                                 <div className='dashboard-card-single'>
                                     <div>
@@ -487,73 +615,27 @@ const DashboardWebpage: React.FC = () => {
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        <tr>
-                                                            <td>William Luther Zambo</td>
-                                                            <td className="with-button">
+                                                        {tableData.length === 0 ? (
+                                                            <tr>
+                                                            <td colSpan={3}>No data available</td>
+                                                            </tr>
+                                                        ) : (
+                                                            tableData.map((row, index) => (
+                                                            <tr key={index}>
+                                                                <td>{row.name}</td>
+                                                                <td className="with-button">
                                                                 Tires
-                                                                <button className="view-button" id='viewDetails' onClick={openModal} >View Details</button>
-                                                            </td>
-                                                            <td className="with-button">
-                                                                <button className="action-button accept-button">Accept</button>
-                                                                <button className="action-button decline-button">Decline</button>
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td>Rosely Mae Cordova</td>
-                                                            <td className="with-button">
-                                                                Fuel
-                                                                <button className="view-button" onClick={openModal}>View Details</button>
-                                                            </td>
-                                                            <td className="with-button">
-                                                                <button className="action-button accept-button">Accept</button>
-                                                                <button className="action-button decline-button">Decline</button>
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td>Mark Stephen Adlawan</td>
-                                                            <td className="with-button">
-                                                                Undetermined
-                                                                <button className="view-button" onClick={openModal}>View Details</button>
-                                                            </td>
-                                                            <td className="with-button">
-                                                                <button className="action-button accept-button">Accept</button>
-                                                                <button className="action-button decline-button">Decline</button>
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td>William Luther Zambo</td>
-                                                            <td className="with-button">
-                                                                Undetermined
-                                                                <button className="view-button" onClick={openModal}>View Details</button>
-                                                            </td>
-                                                            <td className="with-button">
-                                                                <button className="action-button accept-button">Accept</button>
-                                                                <button className="action-button decline-button">Decline</button>
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td>Rosely Mae Cordova</td>
-                                                            <td className="with-button">
-                                                                Undetermined
-                                                                <button className="view-button" onClick={openModal}>View Details</button>
-                                                            </td>
-                                                            <td className="with-button">
-                                                                <button className="action-button accept-button">Accept</button>
-                                                                <button className="action-button decline-button">Decline</button>
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td>Mark Stephen Adlawan</td>
-                                                            <td className="with-button">
-                                                                Undetermined
-                                                                <button className="view-button" onClick={openModal}>View Details</button>
-                                                            </td>
-                                                            <td className="with-button">
-                                                                <button className="action-button accept-button">Accept</button>
-                                                                <button className="action-button decline-button">Decline</button>
-                                                            </td>
-                                                        </tr>
-                                                    </tbody>
+                                                                <button className="view-button" id="viewDetails" onClick={() => openModal(row)}>
+                                                                    View Details
+                                                                </button>
+                                                                </td>
+                                                                <td  className={`with-button ${getStatusClass(row.status)}`}>
+                                                                {(row.status)}
+                                                                </td>
+                                                            </tr>
+                                                            ))
+                                                        )}
+                                                        </tbody>
                                                 </table>
                                             </div>
                                         </div>

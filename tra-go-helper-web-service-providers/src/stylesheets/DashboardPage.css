@@ -275,6 +275,29 @@ td{
     color: #222;
 }
 
+/* Define colors based on status */
+.status-pending {
+    background-color: red;
+    color: white;
+}
+
+.status-ongoing {
+    background-color: skyblue;
+    color: black;
+}
+
+.status-success {
+    background-color: green;
+    color: white;
+}
+
+.status-cancel {
+    background-color: grey;
+    color: white;
+}
+
+/* Add more styles as needed */
+
 .with-button {
     position: relative;
 }
@@ -282,7 +305,7 @@ td{
 .view-button {
     position: absolute;
     top: 50%;
-    left: 150px;
+    left: 20%; /* Default left position, adjust as needed */
     transform: translateY(-50%);
     padding: 5px 10px;
     background-color: #3498db; /* Button background color */
@@ -291,12 +314,33 @@ td{
     border-radius: 5px;
     cursor: pointer;
     font-size: 10px;
+    transition: background-color 0.3s ease; /* Add transition for smooth hover effect */
 }
 
 .view-button:hover {
     background-color: #7ca8c5; /* Change the background color on hover */
 }
 
+/* Media query for small screens */
+@media only screen and (max-width: 600px) {
+    .view-button {
+        left: 25%; /* Adjust this value for small screens */
+    }
+}
+
+/* Media query for medium screens */
+@media only screen and (min-width: 601px) and (max-width: 1024px) {
+    .view-button {
+        left: 40%; /* Adjust this value for medium screens */
+    }
+}
+
+/* Media query for large screens */
+@media only screen and (min-width: 1025px) {
+    .view-button {
+        left: 80%; /* Adjust this value for large screens */
+    }
+}
 .accept-button {
     background-color: #2ecc71;
     color: #fff; 
