@@ -17,10 +17,12 @@ interface UserData {
   }
 
   interface RequestData {
+    otherNotes: string;
     requestUID: string;
     serviceProviderEmail: string;
     name: string;
     progress: string;
+    vehicleType: string;
   }
 
   interface vehicleOwnerData {
@@ -30,7 +32,23 @@ interface UserData {
     profilePicture: string;
     userUID: string;
     status: string;
+    latitude: string;
+    longitude: string;// Set default longitude, adjust as needed
+    vehicleType: string;
   }
+
+  interface vehicleOwnerDataLocation {
+    vehicleType: string;
+    email: string;
+    latitude: string;
+    longitude: string;
+    userUID: string;
+  }
+
+  interface LocationData {
+    latitude: string;
+    longitude: string;
+}
 
 const DashboardWebpage: React.FC = () => {
     const [tableData, setTableData] = useState<vehicleOwnerData[]>([]);
@@ -40,11 +58,35 @@ const DashboardWebpage: React.FC = () => {
     const [user, setUserData] = useState<UserData | null>(null);
     const [requestUser, setRequestUser] = useState<RequestData | null>(null);
     const [ownerUser, setOwnerUser] = useState<vehicleOwnerData | null>(null);
-    const [requestCount, setRequestCount] = useState(0);
+    const [TotalrequestCount, setRequestCount] = useState(0);
+    const [cancelledrequestCount, setcancelledRequestCount] = useState(0);
+    const [successrequestCount, setsuccessRequestCount] = useState(0);
+    const [AcceptedrequestCount, setAcceptedRequestCount] = useState(0);
 
+    // Dashboard Logic after Login
     useEffect(() => {
         const fetchData = async () => {
           try {
+
+            // const newUser = {
+            //     otherNotes: 'none',
+            //     serviceProviderEmail: 'markerade2@gmail.com',
+            //     requestUID: 'kFR2zqffOhUUg670e8gX4IRTTXx2',
+            //     vehicleOwnerEmail: 'yorforger@gmail.com',
+            //     progress: '0',
+            //     vehicleType: 'cr54161213'
+            // };
+
+            //   const requestUID = newUser.requestUID;
+            //   const newUserRef = firebase.database().ref('cancelledServiceRequest').child(requestUID).set(newUser);
+
+            //   console.log('New user added with key:', requestUID);
+
+
+            // Clear existing data before updating
+            setTableData([]);
+            setOwnerUser(null);
+
             const user = firebase.auth().currentUser;
             if (user) {
               const uid = user.uid;
@@ -56,9 +98,101 @@ const DashboardWebpage: React.FC = () => {
       
               const existingServiceProviderData = serviceProviderSnapshot.val() || {};
               const fetchedUserData = userSnapshot.val();
-      
               const targetEmail = fetchedUserData?.email;
-      
+
+              //Cancel Request Logic Counter
+
+              if (user?.email && targetEmail !== null) {
+                const serviceProviderEmail = user.email;
+                const cancelledrequestRef = firebase.database().ref('cancelledServiceRequest').orderByChild('serviceProviderEmail').equalTo(serviceProviderEmail);
+                cancelledrequestRef.on('value', async (snapshot) => {
+                    let count = 0;
+
+                      // Using for...of loop to allow await inside the loop
+                  snapshot.forEach((childSnapshot) => {
+                    const cancelledrequest: RequestData = childSnapshot.val();
+                  
+                    // monintoring data pass through through console
+                    console.log('Request:', cancelledrequest);
+                    console.log('Request email:', cancelledrequest.serviceProviderEmail);
+                    console.log('Owner UID:', cancelledrequest.requestUID);
+
+                    if (cancelledrequest.serviceProviderEmail === user?.email) {
+                        console.log('Request email matches target email');
+                        count++;
+                        const ownerUID = cancelledrequest.requestUID;
+                    
+                        console.log('Cancelled Owner UID:', ownerUID);
+
+                    }
+                })
+                 setcancelledRequestCount(count);
+               });
+                
+              }
+
+              //Success Request Data Counter
+              if (user?.email && targetEmail !== null) {
+                const serviceProviderEmail = user.email;
+                const successrequestRef = firebase.database().ref('successServiceRequest').orderByChild('serviceProviderEmail').equalTo(serviceProviderEmail);
+                successrequestRef.on('value', async (snapshot) => {
+                    let count = 0;
+
+                      // Using for...of loop to allow await inside the loop
+                  snapshot.forEach((childSnapshot) => {
+                    const successrequest: RequestData = childSnapshot.val();
+                  
+                    // monintoring data pass through through console
+                    console.log('Request:', successrequest);
+                    console.log('Request email:', successrequest.serviceProviderEmail);
+                    console.log('Owner UID:', successrequest.requestUID);
+
+                    if (successrequest.serviceProviderEmail === user?.email) {
+                        console.log('Request email matches target email');
+                        count++;
+                        const ownerUID = successrequest.requestUID;
+                    
+                        console.log('Success Owner UID:', ownerUID);
+
+                    }
+                })
+                 setsuccessRequestCount(count);
+               });
+                
+              }
+
+               //Accept Request Data Counter
+               if (user?.email && targetEmail !== null) {
+                const serviceProviderEmail = user.email;
+                const acceptedrequestRef = firebase.database().ref('acceptedServiceRequest').orderByChild('serviceProviderEmail').equalTo(serviceProviderEmail);
+                acceptedrequestRef.on('value', async (snapshot) => {
+                    let count = 0;
+
+                      // Using for...of loop to allow await inside the loop
+                  snapshot.forEach((childSnapshot) => {
+                    const acceptedrequest: RequestData = childSnapshot.val();
+                  
+                    // monintoring data pass through through console
+                    console.log('Request:', acceptedrequest);
+                    console.log('Request email:', acceptedrequest.serviceProviderEmail);
+                    console.log('Owner UID:', acceptedrequest.requestUID);
+
+                    if (acceptedrequest.serviceProviderEmail === user?.email) {
+                        console.log('Request email matches target email');
+                        count++;
+                        const ownerUID = acceptedrequest.requestUID;
+                    
+                        console.log('Success Owner UID:', ownerUID);
+
+                    }
+                })
+                 setAcceptedRequestCount(count);
+               });
+                
+              }
+              
+              //Total and Pending request Table Display and Logic
+
               if (user?.email && targetEmail !== null) {
                 const serviceProviderEmail = user.email;
                 const requestsRef = firebase.database().ref('serviceRequest').orderByChild('serviceProviderEmail').equalTo(serviceProviderEmail);
@@ -89,6 +223,10 @@ const DashboardWebpage: React.FC = () => {
                         promises.push(
                           (async () => {
                             try {
+                                 // Clear existing data before updating
+                                 setTableData([]);
+                                 setOwnerUser(null);
+
                               // Fetch owner data from the vehicleOwner table
                               const ownerSnapshot = await firebase.database().ref(`vehicleOwner/${ownerUID}`).once(`value`);
                               const ownerData = ownerSnapshot.val();
@@ -101,17 +239,21 @@ const DashboardWebpage: React.FC = () => {
                                     userUID: ownerData.userUID || 'RequestUID',
                                     phoneNumber: ownerData.phoneNumber || 'phonenumber',
                                     profilePicture: ownerData.profilePicture || 'profilePictureURL',
-                                    status: getStatusText(request.progress)  // Use request.progress instead of existingServiceProviderData.progress
+                                    status: getStatusText(request.progress), // Use request.progress instead of existingServiceProviderData.progress
+                                    latitude: '',
+                                    longitude: '',
+                                    vehicleType: ownerData.vehicleType
                                 };
                                 console.log('request status:', request.progress);
                                 setOwnerUser(vehicleOwnerUserDataToDisplay);
                                 console.log('owner Name', vehicleOwnerUserDataToDisplay);
-
+                                
                                  // Add owner data to tableData
                                  setTableData((prevTableData) => [...prevTableData, vehicleOwnerUserDataToDisplay]);
                               } else {
                                 console.error('Owner data not found.');
                               }
+                              
                             } catch (error) {
                               console.error('Error fetching owner data:', error);
                             }
@@ -160,33 +302,40 @@ const DashboardWebpage: React.FC = () => {
           unsubscribe();
         };
       }, [setRequestCount, setUserData, setTableData]);
-
+      //First things to know the status is to be check here from classes and right after the data will be transffered to status Text
       const getStatusClass = (status: string) => {
         switch (status) {
-            case "0":
-                return "status-pending";
             case "1":
-                return "status-ongoing";
-            case "2":
-                return "status-success";
-            case "3":
+                return "status-pending";
+            case "25":
+                return "status-received";
+            case "50":
+                return "status-en-route";
+            case "75":
+                return "status-check-repair";
+            case "100":
+                return "status-complete";
+            case "0":
                 return "status-cancel";
             default:
                 return ""; // No class for unknown status
         }
     };
-
-      const getStatusText = (status: string) => {
-        console.log('ProgressOutput:',status)
+    //Here it will get the referrence from the getstatusclass in order to get the approriate Text to be displayed
+    const getStatusText = (status: string) => {
         switch (status) {
-            case "0":
-                return "Pending";
             case "1":
-                return "Ongoing";
-            case "2":
-                return "Success";
-            case "3":
-                return "Canceled";
+                return "Pending";
+            case "25":
+                return "Received";
+            case "50":
+                return "En Route";
+            case "75":
+                return "Check and Repair";
+            case "100":
+                return "Complete";
+            case "0":
+                return "Cancelled";
             default:
                 return "Unknown Status";
         }
@@ -247,9 +396,10 @@ const DashboardWebpage: React.FC = () => {
     const [message, setMessage] = useState<string>('');
 
     //map
-    const [mapCoordinates, setMapCoordinates] = useState({ lat: 10.3167, lng: 123.75 });
     const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyAZNytfQ7AIyGd12zHfAYKp-sWzOR2IzA8';
     const mapRef = useRef<HTMLIFrameElement>(null);
+    const [selectedCustomerCoordinates, setSelectedCustomerCoordinates] = useState({ lat: 0, lng: 0 });
+    const [locationData, setLocationData] = useState<LocationData | null>(null);
 
     //notification
     const openNotificationModal = () => {
@@ -262,10 +412,80 @@ const DashboardWebpage: React.FC = () => {
         setNotifModalVisible(false);
     };
 
-    //set modal to visible and not
-    const openModal = () => {
-        setModalVisible(true);
+    const getStatusTextModalDisplay = (progress: string) => {
+        switch (progress) {
+            case "1":
+                return "Pending";
+            case "25":
+                return "Received";
+            case "50":
+                return "En Route";
+            case "75":
+                return "Check and Repair";
+            case "100":
+                return "Complete";
+            case "0":
+                return "Cancelled";
+            default:
+                return "Unknown Status";
+        }
+    };
 
+    //set modal to visible and not
+    const openModal = async (selectedOwnerUser: vehicleOwnerDataLocation) => {
+        try {
+            // Fetch the selected user's data using the userUID from vehicleOwner table
+            const ownerSnapshot = await firebase.database().ref(`vehicleOwner/${selectedOwnerUser.userUID}`).once('value');
+            const ownerData = ownerSnapshot.val();
+    
+            if (ownerData) {
+                // Fetch additional data from the serviceRequest table based on userUID
+                const serviceRequestSnapshot = await firebase.database().ref(`serviceRequest/${selectedOwnerUser.userUID}`).once('value');
+                const serviceRequestData = serviceRequestSnapshot.val();
+    
+                // Display owner data
+                const vehicleOwnerUserDataToDisplay: vehicleOwnerData = {
+                    name: ownerData.name || 'OwnerName',
+                    email: ownerData.email || 'email address for owner',
+                    userUID: ownerData.userUID || 'RequestUID',
+                    phoneNumber: ownerData.phoneNumber || 'phonenumber',
+                    profilePicture: ownerData.profilePicture || 'profilePictureURL',
+                    status: getStatusTextModalDisplay(serviceRequestData?.progress) || 'Unknown Status', // There is no 'progress' property in vehicleOwnerData; adjust as needed
+                    latitude: '0',  // Set default latitude, adjust as needed
+                    longitude: '0', // Set default longitude, adjust as needed
+                    vehicleType: serviceRequestData?.vehicleType || 'DefaultVehicleType', // Include the vehicleType property
+                };
+    
+                console.log('location test data transfer:', vehicleOwnerUserDataToDisplay);
+    
+                // Update the state with the selected user's data
+                setOwnerUser(vehicleOwnerUserDataToDisplay);
+    
+                // Fetch latitude and longitude from the location table using userUID
+                const locationSnapshot = await firebase.database().ref(`vehicleOwnerLocation/${vehicleOwnerUserDataToDisplay.userUID}`).once('value');
+                const locationData = locationSnapshot.val();
+    
+                if (locationData) {
+                    // Display location data
+                    const locationDataToDisplay: LocationData = {
+                        latitude: locationData.latitude || '0',
+                        longitude: locationData.longitude || '0',
+                    };
+    
+                    console.log ('coordinate of selected User: ', locationData);
+                    setLocationData(locationDataToDisplay);
+                    setSelectedCustomerCoordinates(locationData);
+                } else {
+                    console.error('Location data not found.');
+                }
+    
+                setModalVisible(true); // Set the modal visible after updating the state
+            } else {
+                console.error('Owner data not found.');
+            }
+        } catch (error) {
+            console.error('Error fetching owner data:', error);
+        }
     };
 
     const closeModal = () => {
@@ -297,18 +517,18 @@ const DashboardWebpage: React.FC = () => {
     useEffect(() => {
         if (mapRef.current) {
             const mapOptions = {
-                center: { lat: mapCoordinates.lat, lng: mapCoordinates.lng },
+                center: { lat: selectedCustomerCoordinates.lat, lng: selectedCustomerCoordinates.lng },
                 zoom: 14,
             };
             const map = new window.google.maps.Map(mapRef.current, mapOptions);
-
-            const markerCoordinates = { lat: 10.3387, lng: 123.91194 };
+    
+            const markerCoordinates = { lat: selectedCustomerCoordinates.lat, lng: selectedCustomerCoordinates.lng };
             const marker = new window.google.maps.Marker({
                 position: markerCoordinates,
                 map: map,
             });
         }
-    }, [mapCoordinates]);
+    }, [selectedCustomerCoordinates]);
 
     //show chat message
     const toggleChat = () => {
@@ -330,6 +550,9 @@ const DashboardWebpage: React.FC = () => {
     //function notification
 
 
+
+    //Labeling
+    const viewDetailsLabel = "View Details";
 
     return (
         <div>
@@ -514,7 +737,7 @@ const DashboardWebpage: React.FC = () => {
                             <div className='dashboard-cards'>
                                     <div className='dashboard-card-single'>
                                         <div>
-                                            <h1 className='card-h1'>{requestCount}</h1>
+                                            <h1 className='card-h1'>{TotalrequestCount}</h1>
                                             <span>Total Request</span>
                                         </div>
                                         <div>
@@ -524,7 +747,7 @@ const DashboardWebpage: React.FC = () => {
 
                                 <div className='dashboard-card-single'>
                                     <div>
-                                        <h1 className='card-h1'>54</h1>
+                                        <h1 className='card-h1'>{cancelledrequestCount}</h1>
                                         <span>Cancel Request</span>
                                     </div>
                                     <div>
@@ -534,7 +757,7 @@ const DashboardWebpage: React.FC = () => {
 
                                 <div className='dashboard-card-single'>
                                     <div>
-                                        <h1 className='card-h1'>54</h1>
+                                        <h1 className='card-h1'>{successrequestCount}</h1>
                                         <span>Success Request</span>
                                     </div>
                                     <div>
@@ -544,7 +767,7 @@ const DashboardWebpage: React.FC = () => {
 
                                 <div className='dashboard-card-single'>
                                     <div>
-                                        <h1 className='card-h1'>54</h1>
+                                        <h1 className='card-h1'>{AcceptedrequestCount}</h1>
                                         <span>Accept Request</span>
                                     </div>
                                     <div>
@@ -561,7 +784,7 @@ const DashboardWebpage: React.FC = () => {
                                         <div className="details-container">
                                             <iframe
                                                 title="Google Maps"
-                                                src={`https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${mapCoordinates.lat},${mapCoordinates.lng}`}
+                                                src={`https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${locationData?.latitude},${locationData?.longitude}`}
                                                 width="500%"
                                                 height="400px"
                                                 frameBorder="0"
@@ -573,16 +796,19 @@ const DashboardWebpage: React.FC = () => {
                                             <div className="details">
                                                 <h2 className='details-header'>View Details:</h2>
                                                 <label>Customer Name:</label>
-                                                <input type="text" value="William Luther Zambo" readOnly />
+                                                <input type="text" value={ownerUser?.name} readOnly />
 
                                                 <label>Service Type</label>
                                                 <input type="text" value="Tires" readOnly />
 
                                                 <label>Contact No.:</label>
-                                                <input type="text" value="09777568085" readOnly />
+                                                <input type="text" value={ownerUser?.phoneNumber} readOnly />
 
                                                 <label>Plate Number:</label>
-                                                <input type="text" value="ABC123" readOnly />
+                                                <input type="text" value={ownerUser?.vehicleType} readOnly />
+
+                                                <label>Status:</label>
+                                                <input type="text" value={ownerUser?.status} readOnly />
 
                                                 <div className="modal-button-container">
                                                     <button className="modal-accept-button">Accept</button>
@@ -623,15 +849,18 @@ const DashboardWebpage: React.FC = () => {
                                                             tableData.map((row, index) => (
                                                             <tr key={index}>
                                                                 <td>{row.name}</td>
-                                                                <td className="with-button">
-                                                                Tires
-                                                                <button className="view-button" id="viewDetails" onClick={() => openModal(row)}>
-                                                                    View Details
-                                                                </button>
+                                                                {!isModalVisible && ( // Render the button only if the modal is not visible
+                                                                <td className="with-button">Tires
+                                                                    <button className="view-button" id="viewDetails" onClick={() => openModal(row)}>
+                                                                        {viewDetailsLabel}
+                                                                    </button>
                                                                 </td>
-                                                                <td  className={`with-button ${getStatusClass(row.status)}`}>
+                                                                )}
+                                                                {!isModalVisible && ( 
+                                                                <td className={`with-button ${getStatusClass(row.status)}`}>
                                                                 {(row.status)}
                                                                 </td>
+                                                                )}
                                                             </tr>
                                                             ))
                                                         )}

@@ -220,7 +220,7 @@ main{
 }
 
 .dashboard-card-single:last-child{
-    background: rgb(224, 220, 220);
+    background: rgb(255, 255, 255);
 }
 
 .recent-grid{
@@ -510,7 +510,7 @@ td{
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    padding-top: 80px;
+    padding-top: 25px;
 }
 
 .modal-accept-button {
