@@ -848,23 +848,27 @@ const DashboardWebpage: React.FC = () => {
                                                         ) : (
                                                             tableData.map((row, index) => (
                                                             <tr key={index}>
-                                                                <td>{row.name}</td>
-                                                                {!isModalVisible && ( // Render the button only if the modal is not visible
-                                                                <td className="with-button">Tires
-                                                                    <button className="view-button" id="viewDetails" onClick={() => openModal(row)}>
-                                                                        {viewDetailsLabel}
-                                                                    </button>
-                                                                </td>
-                                                                )}
-                                                                {!isModalVisible && ( 
-                                                                <td className={`with-button ${getStatusClass(row.status)}`}>
-                                                                {(row.status)}
-                                                                </td>
+                                                                {row.status === 'Pending' && (
+                                                                    <>
+                                                                    <td>{row.name}</td>
+                                                                    {!isModalVisible && ( // Render the button only if the modal is not visible
+                                                                    <td className="with-button">Tires
+                                                                        <button className="view-button" id="viewDetails" onClick={() => openModal(row)}>
+                                                                            {viewDetailsLabel}
+                                                                        </button>
+                                                                    </td>
+                                                                    )}
+                                                                    {!isModalVisible && ( 
+                                                                    <td className={`with-button ${getStatusClass(row.status)}`}>
+                                                                    {(row.status)}
+                                                                    </td>
+                                                                    )}
+                                                                    </>
                                                                 )}
                                                             </tr>
                                                             ))
                                                         )}
-                                                        </tbody>
+                                                    </tbody>
                                                 </table>
                                             </div>
                                         </div>
