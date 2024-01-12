@@ -437,12 +437,14 @@ const DashboardWebpage: React.FC = () => {
             // Fetch the selected user's data using the userUID from vehicleOwner table
             const ownerSnapshot = await firebase.database().ref(`vehicleOwner/${selectedOwnerUser.userUID}`).once('value');
             const ownerData = ownerSnapshot.val();
+            
     
             if (ownerData) {
                 // Fetch additional data from the serviceRequest table based on userUID
                 const serviceRequestSnapshot = await firebase.database().ref(`serviceRequest/${selectedOwnerUser.userUID}`).once('value');
                 const serviceRequestData = serviceRequestSnapshot.val();
-    
+                
+                
                 // Display owner data
                 const vehicleOwnerUserDataToDisplay: vehicleOwnerData = {
                     name: ownerData.name || 'OwnerName',
@@ -457,9 +459,11 @@ const DashboardWebpage: React.FC = () => {
                 };
     
                 console.log('location test data transfer:', vehicleOwnerUserDataToDisplay);
-    
+                
+                console.log('Before setting state in openModal:', selectedOwnerUser);
                 // Update the state with the selected user's data
                 setOwnerUser(vehicleOwnerUserDataToDisplay);
+                console.log('After setting state in openModal:', selectedOwnerUser);
     
                 // Fetch latitude and longitude from the location table using userUID
                 const locationSnapshot = await firebase.database().ref(`vehicleOwnerLocation/${vehicleOwnerUserDataToDisplay.userUID}`).once('value');
@@ -478,13 +482,94 @@ const DashboardWebpage: React.FC = () => {
                 } else {
                     console.error('Location data not found.');
                 }
-    
+                
+                console.log('Selected Owner User:', selectedOwnerUser);
                 setModalVisible(true); // Set the modal visible after updating the state
+               
             } else {
                 console.error('Owner data not found.');
             }
+            
         } catch (error) {
             console.error('Error fetching owner data:', error);
+        }
+    };
+
+    const [selectedOwnerUser, setSelectedOwnerUser] = useState<vehicleOwnerDataLocation | null>(null);
+
+    const handleAccept = async () => {
+        try {
+            console.log('Selected Owner User:', ownerUser);
+            if (ownerUser && ownerUser.userUID) {
+                // Update the progress to "25" in the serviceRequest table
+                await firebase.database().ref(`serviceRequest/${ownerUser.userUID}`).update({
+                    progress: '25',
+                });
+
+                const acceptedServiceRequestRef = firebase.database().ref(`acceptedServiceRequest/${ownerUser.userUID}`);
+
+                // Create a record in the acceptedServiceRequest table
+                const serviceRequestSnapshot = await firebase.database().ref(`serviceRequest/${ownerUser.userUID}`).once('value');
+                const serviceRequestData = serviceRequestSnapshot.val();
+
+                if (serviceRequestData) {
+                    await acceptedServiceRequestRef.set({
+                        ...serviceRequestData,
+                        timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    });
+                } else {
+                    console.error('Service request data not found.');
+                }
+
+                // Set the selected owner user
+                setSelectedOwnerUser(ownerUser);
+
+                // Close the modal after updating the data
+                setModalVisible(false);
+                } else {
+                    console.log('Selected Owner User:', selectedOwnerUser);
+                    console.error('selectedOwnerUser not found.');
+            }
+        } catch (error) {
+            console.error('Error accepting request:', error);
+        }
+    };
+
+    const handleDecline = async () => {
+        try {
+            console.log('Selected Owner User:', ownerUser);
+            if (ownerUser && ownerUser.userUID) {
+                // Update the progress to "25" in the serviceRequest table
+                await firebase.database().ref(`serviceRequest/${ownerUser.userUID}`).update({
+                    progress: '0',
+                });
+
+                const acceptedServiceRequestRef = firebase.database().ref(`cancelledServiceRequest/${ownerUser.userUID}`);
+
+                // Create a record in the acceptedServiceRequest table
+                const serviceRequestSnapshot = await firebase.database().ref(`serviceRequest/${ownerUser.userUID}`).once('value');
+                const serviceRequestData = serviceRequestSnapshot.val();
+
+                if (serviceRequestData) {
+                    await acceptedServiceRequestRef.set({
+                        ...serviceRequestData,
+                        timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    });
+                } else {
+                    console.error('Service request data not found.');
+                }
+
+                // Set the selected owner user
+                setSelectedOwnerUser(ownerUser);
+
+                // Close the modal after updating the data
+                setModalVisible(false);
+                } else {
+                    console.log('Selected Owner User:', selectedOwnerUser);
+                    console.error('selectedOwnerUser not found.');
+            }
+        } catch (error) {
+            console.error('Error accepting request:', error);
         }
     };
 
@@ -553,6 +638,7 @@ const DashboardWebpage: React.FC = () => {
 
     //Labeling
     const viewDetailsLabel = "View Details";
+
 
     return (
         <div>
@@ -811,8 +897,8 @@ const DashboardWebpage: React.FC = () => {
                                                 <input type="text" value={ownerUser?.status} readOnly />
 
                                                 <div className="modal-button-container">
-                                                    <button className="modal-accept-button">Accept</button>
-                                                    <button className="modal-decline-button">Decline</button>
+                                                    <button className="modal-accept-button" onClick={handleAccept}>Accept</button>
+                                                    <button className="modal-decline-button"onClick={handleDecline}>Decline</button>
                                                 </div>
                                             </div>
                                         </div>
