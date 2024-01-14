@@ -227,7 +227,7 @@ main{
     margin-top: 55px;
     display: grid;
     grid-gap: 32px;
-    grid-template-columns: 74% auto;
+    grid-template-columns: 70% auto;
 }
 
 .card{
@@ -554,7 +554,6 @@ td{
     overflow: hidden;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     z-index: 4;
-    display: none;
 }
 
 .dashboard-notification {

@@ -50,6 +50,22 @@ interface UserData {
     longitude: string;
 }
 
+interface AcceptedServiceRequest {
+    name: string;
+    otherNotes: string;
+    phoneNumber: string;
+    progress: string;
+    requestUID: string;
+    serviceProviderEmail: string;
+    timestamp: string;
+    vehicleOwnerEmail: string;
+    vehicleType: string;
+    profilePicture: string;
+
+    // Add other properties as needed based on your data structure
+  }
+
+
 const DashboardWebpage: React.FC = () => {
     const [tableData, setTableData] = useState<vehicleOwnerData[]>([]);
     const [activeMenuItem, setActiveMenuItem] = useState<string>('dashboard')
@@ -62,6 +78,7 @@ const DashboardWebpage: React.FC = () => {
     const [cancelledrequestCount, setcancelledRequestCount] = useState(0);
     const [successrequestCount, setsuccessRequestCount] = useState(0);
     const [AcceptedrequestCount, setAcceptedRequestCount] = useState(0);
+    const [acceptedRequests, setAcceptedRequests] = useState<AcceptedServiceRequest[]>([]);
 
     // Dashboard Logic after Login
     useEffect(() => {
@@ -88,6 +105,37 @@ const DashboardWebpage: React.FC = () => {
             setOwnerUser(null);
 
             const user = firebase.auth().currentUser;
+
+            //Display for ongoing request
+                const fetchAcceptedRequests = async () => {
+                    const user = firebase.auth().currentUser;
+                
+                    if (user) {
+                    const serviceProviderEmail = user.email;
+                    console.log('Service Provider Email:', serviceProviderEmail);
+                
+                    const acceptedRequestsRef = firebase.database().ref('acceptedServiceRequest')
+                        .orderByChild('serviceProviderEmail').equalTo(serviceProviderEmail);
+                
+                    acceptedRequestsRef.on('value', (snapshot) => {
+                        console.log('Snapshot for ongoing request:', snapshot.val());
+                        const acceptedRequestsData: AcceptedServiceRequest[] = [];
+                        
+                        snapshot.forEach((childSnapshot) => {
+                        const acceptedRequest: AcceptedServiceRequest = childSnapshot.val() as AcceptedServiceRequest;
+                        acceptedRequestsData.push(acceptedRequest);
+                        });
+                
+                        // Update the state with the accepted service requests
+                        setAcceptedRequests(acceptedRequestsData);
+                    });
+                    }
+                };
+            
+              // Fetch accepted service requests when the component mounts
+              fetchAcceptedRequests();
+            
+             
             if (user) {
               const uid = user.uid;
       
@@ -288,15 +336,21 @@ const DashboardWebpage: React.FC = () => {
             } else {
               console.error('User not authenticated. Wait for Admin to approve the account');
             }
+            
+            
           } catch (error) {
             console.error('Error fetching user data:', error);
           }
         };
       
         const unsubscribe = firebase.auth().onAuthStateChanged(fetchData);
-      
+
+         // Cleanup the event listener when the component unmounts
         // Unsubscribe from the 'value' event and AuthStateChanged when the component unmounts
         return () => {
+            const acceptedRequestsRef = firebase.database().ref('acceptedServiceRequest');
+            acceptedRequestsRef.off('value');
+            console.log('Event listener removed.');
           const requestsRef = firebase.database().ref('serviceRequest');
           requestsRef.off('value');
           unsubscribe();
@@ -340,8 +394,51 @@ const DashboardWebpage: React.FC = () => {
                 return "Unknown Status";
         }
     };
+
+    //Display for ongoing request
+
+    // useEffect(() => {
+    //     const fetchAcceptedRequests = async () => {
+    //       const user = firebase.auth().currentUser;
+      
+    //       if (user) {
+    //         const serviceProviderEmail = user.email;
+    //         console.log('Service Provider Email:', serviceProviderEmail);
+      
+    //         const acceptedRequestsRef = firebase.database().ref('acceptedServiceRequest')
+    //           .orderByChild('serviceProviderEmail').equalTo(serviceProviderEmail);
+      
+    //         acceptedRequestsRef.on('value', (snapshot) => {
+    //           console.log('Snapshot for ongoing request:', snapshot.val());
+    //           const acceptedRequestsData: AcceptedServiceRequest[] = [];
+              
+    //           snapshot.forEach((childSnapshot) => {
+    //             const acceptedRequest: AcceptedServiceRequest = childSnapshot.val() as AcceptedServiceRequest;
+    //             acceptedRequestsData.push(acceptedRequest);
+    //           });
+      
+    //           // Update the state with the accepted service requests
+    //           setAcceptedRequests(acceptedRequestsData);
+    //         });
+    //       }
+    //     };
+      
+    //     // Fetch accepted service requests when the component mounts
+    //     fetchAcceptedRequests();
+      
+    //     // Cleanup the event listener when the component unmounts
+    //     return () => {
+    //       const acceptedRequestsRef = firebase.database().ref('acceptedServiceRequest');
+    //       acceptedRequestsRef.off('value');
+    //       console.log('Event listener removed.');
+    //     };
+    //   }, []); // The empty dependency array ensures this effect runs only once when the component mounts
+    
       
 
+    //display when there is ongoing request
+
+    
        // Dependency array is empty to run the effect only once when the component mounts
     
  
@@ -391,10 +488,7 @@ const DashboardWebpage: React.FC = () => {
     //modal
     const [isModalVisible, setModalVisible] = useState(false);
 
-    //message
-    const [showChat, setShowChat] = useState<boolean>(false);
-    const [message, setMessage] = useState<string>('');
-
+    
     //map
     const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyAZNytfQ7AIyGd12zHfAYKp-sWzOR2IzA8';
     const mapRef = useRef<HTMLIFrameElement>(null);
@@ -514,6 +608,9 @@ const DashboardWebpage: React.FC = () => {
 
                 if (serviceRequestData) {
                     await acceptedServiceRequestRef.set({
+                        profilePicture: ownerUser.profilePicture,
+                        name:ownerUser.name,
+                        phoneNumber: ownerUser.phoneNumber,
                         ...serviceRequestData,
                         timestamp: firebase.database.ServerValue.TIMESTAMP,
                     });
@@ -615,11 +712,62 @@ const DashboardWebpage: React.FC = () => {
         }
     }, [selectedCustomerCoordinates]);
 
+    //message
+    const [showChat, setShowChat] = useState<boolean>(false);
+    const [message, setMessage] = useState<string>('');
+    const [selectedRequest, setSelectedRequest] = useState<AcceptedServiceRequest | null>(null);
+
+    const handleEnRouteClick = async (request: AcceptedServiceRequest) => {
+        const newProgress = "50"; // Set the desired progress value
+      
+        // Create a new object with the updated progress
+        const updatedRequest: AcceptedServiceRequest = { ...request, progress: newProgress };
+      
+        try {
+          // Update the state with the modified request
+          setSelectedRequest(updatedRequest);
+      
+          // Update the progress in the serviceRequest node
+          await firebase.database().ref(`serviceRequest/${request.requestUID}`).update({
+            progress: newProgress,
+          });
+      
+          // Update the progress in the acceptedServiceRequest node
+          await firebase.database().ref(`acceptedServiceRequest/${request.requestUID}`).update({
+            progress: newProgress,
+          });
+      
+          // Perform any other logic related to updating the progress
+          // ...
+      
+          // Now, toggle the chat
+          toggleChat();
+        } catch (error) {
+          console.error('Error updating progress:', error);
+        }
+      };
+      
+      // Function to handle sending a message
+      const handleSendMessage = () => {
+        // Implement the logic to send the entered message
+        console.log(`Sending message to ${selectedRequest.name}: ${message}`);
+        // Update the chat state or perform any necessary actions
+        // ...
+      };
+      
+      // Function to format message time (example)
+      const formatMessageTime = (date) => {
+        const options = { hour: 'numeric', minute: 'numeric', hour12: true };
+        return new Intl.DateTimeFormat('en-US', options).format(date);
+      };
+
     //show chat message
     const toggleChat = () => {
-        setShowChat(!showChat);
+        console.log("Before toggling:", showChat);
+        setShowChat((prevShowChat) => !prevShowChat);
+        console.log("After toggling:", showChat);
     };
-
+    
     //Auto-expand the textarea by setting its height to scrollHeight
     const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
         setMessage(e.target.value);
@@ -1000,85 +1148,38 @@ const DashboardWebpage: React.FC = () => {
                                 <div className='customers'>
                                     <div className='card'>
                                         <div className='card-header'>
-                                            <h3>Ongoing Request</h3>
-                                            <button>See all</button>
+                                        <h3>Ongoing Request</h3>
+                                        <button>See all</button>
                                         </div>
 
                                         <div className='card-body'>
-                                            <div className='customer'>
+                                        {acceptedRequests.length > 0 ? (
+                                            acceptedRequests.map((request) => (
+                                            <div key={request.requestUID} className='customer'>
                                                 <div className='info'>
-                                                    <img src={require('../assets/profile.jpg')} width="40px" height="40px" alt="" className="customer-icon" />
-                                                    <div>
-                                                        <h4>Jennifer Español</h4>
-                                                        <small>Vehicle Owner</small>
-                                                    </div>
+                                                <img src={request.profilePicture} width="40px" height="40px" alt="" className="customer-icon" />
+                                                <div>
+                                                    <h4>{request.name}</h4>
+                                                    <small>Vehicle Owner</small>
                                                 </div>
+                                                </div>
+                                                <hr />
+                                                <div className='info'>
+                                                <h4>Status: {getStatusText(request.progress)}</h4>
+                                                </div>
+                                                <hr />
                                                 <div className='contact'>
-                                                    <span className='user-circle'>
-                                                        <img src={require('../assets/icons8-message-48.png')} alt="" className="card-icon" onClick={toggleChat} />
-                                                    </span>
+                                                <button className='user-circle' onClick={() => handleEnRouteClick(request)}>
+                                                    <img src={require('../assets/icons8-message-48.png')} alt="" className="card-icon" />
+                                                </button>
                                                 </div>
                                             </div>
-
-                                            <div className='customer'>
-                                                <div className='info'>
-                                                    <img src={require('../assets/profile.jpg')} width="40px" height="40px" alt="" className="customer-icon" />
-                                                    <div>
-                                                        <h4>Jennifer Español</h4>
-                                                        <small>Vehicle Owner</small>
-                                                    </div>
-                                                </div>
-                                                <div className='contact'>
-                                                    <span className='user-circle'>
-                                                        <img src={require('../assets/icons8-message-48.png')} alt="" className="card-icon" />
-                                                    </span>
-                                                </div>
+                                            ))
+                                        ) : (
+                                            <div style={{ marginTop: '20px', marginLeft: '10px', marginRight: '10px', marginBottom: '20px' }}>
+                                            <center>No Ongoing Requests</center>
                                             </div>
-
-                                            <div className='customer'>
-                                                <div className='info'>
-                                                    <img src={require('../assets/profile.jpg')} width="40px" height="40px" alt="" className="customer-icon" />
-                                                    <div>
-                                                        <h4>Jennifer Español</h4>
-                                                        <small>Vehicle Owner</small>
-                                                    </div>
-                                                </div>
-                                                <div className='contact'>
-                                                    <span className='user-circle'>
-                                                        <img src={require('../assets/icons8-message-48.png')} alt="" className="card-icon" />
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            <div className='customer'>
-                                                <div className='info'>
-                                                    <img src={require('../assets/profile.jpg')} width="40px" height="40px" alt="" className="customer-icon" />
-                                                    <div>
-                                                        <h4>Jennifer Español</h4>
-                                                        <small>Vehicle Owner</small>
-                                                    </div>
-                                                </div>
-                                                <div className='contact'>
-                                                    <span className='user-circle'>
-                                                        <img src={require('../assets/icons8-message-48.png')} alt="" className="card-icon" />
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            <div className='customer'>
-                                                <div className='info'>
-                                                    <img src={require('../assets/profile.jpg')} width="40px" height="40px" alt="" className="customer-icon" />
-                                                    <div>
-                                                        <h4>Jennifer Español</h4>
-                                                        <small>Vehicle Owner</small>
-                                                    </div>
-                                                </div>
-                                                <div className='contact'>
-                                                    <span className='user-circle'>
-                                                        <img src={require('../assets/icons8-message-48.png')} alt="" className="card-icon" />
-                                                    </span>
-                                                </div>
-                                            </div>
+                                        )}
                                         </div>
                                     </div>
                                 </div>
