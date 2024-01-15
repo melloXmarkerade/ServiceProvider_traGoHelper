@@ -8,14 +8,13 @@
   
   td, th {
     border: none;
-    text-align: center;
+    text-align:start;
     padding: 10px;
     width: 200px; 
   }
   
   .AccountButton {
-    display: flex;
-    align-items: center;
+    display: start;
     justify-content: center; 
   }
   
@@ -39,7 +38,6 @@
   .button-like {
     background-color: #007bff;
     color: #fff;
-    margin: 5px;
     width: 70px;
     height: 50px;
   }

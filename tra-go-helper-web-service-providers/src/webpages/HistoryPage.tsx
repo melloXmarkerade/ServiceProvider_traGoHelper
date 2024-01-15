@@ -12,6 +12,7 @@ interface TableRow {
   name: string;
   phoneNumber: string;
   email: string;
+  progress: string;
 }
 
 const HistoryPage: React.FC = () => {
@@ -64,6 +65,25 @@ const HistoryPage: React.FC = () => {
     setProfileOpen(true);
   };
 
+  const getStatusText = (status: string) => {
+    switch (status) {
+        case "1":
+            return "Pending";
+        case "25":
+            return "Received";
+        case "50":
+            return "En Route";
+        case "75":
+            return "Check and Repair";
+        case "100":
+            return "Complete";
+        case "0":
+            return "Cancelled";
+        default:
+            return "Unknown Status";
+    }
+};
+
   const closeProfile = () => {
     setProfileOpen(false);
   };
@@ -81,7 +101,9 @@ const HistoryPage: React.FC = () => {
           <thead>
             <tr>
               <th>Request Number</th>
+              <th></th>
               <th>Vehicle Plate</th>
+              <th>Status</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -94,7 +116,9 @@ const HistoryPage: React.FC = () => {
               tableData.map((row, index) => (
                 <tr key={index} className="Border">
                   <td>{row.requestUID}</td>
+                  <td></td>
                   <td>{row.vehicleType}</td>
+                  <td>{getStatusText(row.progress)}</td>
                   <td className="AccountButton">
                     <button className="button-like" onClick={() => openProfile(row)}>
                       More Details
@@ -163,6 +187,12 @@ const HistoryPage: React.FC = () => {
                         <td>Request ID Number:</td>
                         <td>
                           <span className="user-detail">{selectedUser.requestUID}</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>Status:</td>
+                        <td>
+                          <span className="user-detail">{getStatusText(selectedUser.progress)}</span>
                         </td>
                       </tr>
                     </tbody>
