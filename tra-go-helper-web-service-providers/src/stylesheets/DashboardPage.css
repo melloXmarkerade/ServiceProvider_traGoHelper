@@ -688,3 +688,112 @@ td{
     margin-left: 985px;
     /* Adjust the value as needed */
 }
+
+
+/* Add this to your CSS stylesheet or in your component's style tag */
+.chat-box {
+    height: 300px; /* Set a fixed height for the chat box */
+    overflow-y: auto; /* Enable vertical scrolling if the content exceeds the height */
+    border: 1px solid #ccc;
+    padding: 10px;
+    box-sizing: border-box;
+  }
+  
+  /* Style for individual messages */
+  .message {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  
+  .message img {
+    margin-right: 10px;
+  }
+  
+  .message-content {
+    background-color: #f0f0f0;
+    padding: 10px;
+    border-radius: 8px;
+  }
+  
+  .sender {
+    justify-content: flex-end;
+  }
+
+  /* Add this to your CSS stylesheet or in your component's style tag */
+.chat-content {
+    background-color: #fff; /* Set the background color of the chat content */
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Add a subtle box shadow */
+  }
+  
+  .chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: #3498db; /* Set the background color of the chat header */
+    color: #fff; /* Set the text color of the chat header */
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+  
+  .chat-header h3 {
+    margin: 0;
+  }
+  
+  .close-btn {
+    cursor: pointer;
+    font-size: 20px;
+  }
+
+  /* Add this to your CSS stylesheet or in your component's style tag */
+.send-button {
+  background-color: #3498db; /* Set the background color of the "Send" button */
+  color: #fff; /* Set the text color of the "Send" button */
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.send-button:hover {
+  background-color: #2980b9; /* Change the background color on hover */
+}
+
+.user-chat-circle {
+    background-color: #ffffff; /* Set the background color of the "En Route" button */
+    color: #fff; /* Set the text color of the "En Route" button */
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+
+.user-chat-circle:hover {
+    background-color:  #2980b9; /* Change the background color on hover */
+}
+
+.user-circle {
+  background-color: #3498db; /* Set the background color of the "En Route" button */
+  color: #fff; /* Set the text color of the "En Route" button */
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.user-circle:hover {
+  background-color:  #2980b9; /* Change the background color on hover */
+}
+
+/* Add styles for the hr element */
+hr {
+  border: 1px solid #ccc;
+  margin: 20px 0;
+}
+  

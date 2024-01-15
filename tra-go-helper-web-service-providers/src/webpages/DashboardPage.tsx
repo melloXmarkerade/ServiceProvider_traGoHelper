@@ -88,14 +88,14 @@ const DashboardWebpage: React.FC = () => {
             // const newUser = {
             //     otherNotes: 'none',
             //     serviceProviderEmail: 'markerade2@gmail.com',
-            //     requestUID: 'kFR2zqffOhUUg670e8gX4IRTTXx2',
-            //     vehicleOwnerEmail: 'yorforger@gmail.com',
-            //     progress: '0',
+            //     requestUID: 'c2ojP6PtMvYACTwYsbTRXjMS7RE2',
+            //     vehicleOwnerEmail: 'loidforger@gmail.com',
+            //     progress: '1',
             //     vehicleType: 'cr54161213'
             // };
 
             //   const requestUID = newUser.requestUID;
-            //   const newUserRef = firebase.database().ref('cancelledServiceRequest').child(requestUID).set(newUser);
+            //   const newUserRef = firebase.database().ref('serviceRequest').child(requestUID).set(newUser);
 
             //   console.log('New user added with key:', requestUID);
 
@@ -259,7 +259,7 @@ const DashboardWebpage: React.FC = () => {
                     console.log('Request email:', request.serviceProviderEmail);
                     console.log('Owner UID:', request.requestUID);
                   
-                    if (request.serviceProviderEmail === user?.email) {
+                    if (request.serviceProviderEmail === user?.email && parseInt(request.progress) > 0 && parseInt(request.progress) < 100 ) {
                       console.log('Request email matches target email');
                       count++;
                       const ownerUID = request.requestUID;
@@ -385,7 +385,7 @@ const DashboardWebpage: React.FC = () => {
             case "50":
                 return "En Route";
             case "75":
-                return "Check and Repair";
+                return "Ongoing Repair";
             case "100":
                 return "Complete";
             case "0":
@@ -717,6 +717,7 @@ const DashboardWebpage: React.FC = () => {
     const [message, setMessage] = useState<string>('');
     const [selectedRequest, setSelectedRequest] = useState<AcceptedServiceRequest | null>(null);
 
+    //En Route Process
     const handleEnRouteClick = async (request: AcceptedServiceRequest) => {
         const newProgress = "50"; // Set the desired progress value
       
@@ -739,28 +740,131 @@ const DashboardWebpage: React.FC = () => {
       
           // Perform any other logic related to updating the progress
           // ...
-      
-          // Now, toggle the chat
-          toggleChat();
         } catch (error) {
           console.error('Error updating progress:', error);
         }
       };
+
+      //Ongoing Procees
+      const handleOngoingClick = async (request: AcceptedServiceRequest) => {
+        const newProgress = "75"; // Set the desired progress value
       
-      // Function to handle sending a message
-      const handleSendMessage = () => {
-        // Implement the logic to send the entered message
-        console.log(`Sending message to ${selectedRequest.name}: ${message}`);
-        // Update the chat state or perform any necessary actions
-        // ...
-      };
+        // Create a new object with the updated progress
+        const updatedRequest: AcceptedServiceRequest = { ...request, progress: newProgress };
       
-      // Function to format message time (example)
-      const formatMessageTime = (date) => {
-        const options = { hour: 'numeric', minute: 'numeric', hour12: true };
-        return new Intl.DateTimeFormat('en-US', options).format(date);
+        try {
+          // Update the state with the modified request
+          setSelectedRequest(updatedRequest);
+      
+          // Update the progress in the serviceRequest node
+          await firebase.database().ref(`serviceRequest/${request.requestUID}`).update({
+            progress: newProgress,
+          });
+      
+          // Update the progress in the acceptedServiceRequest node
+          await firebase.database().ref(`acceptedServiceRequest/${request.requestUID}`).update({
+            progress: newProgress,
+          });
+      
+          // Perform any other logic related to updating the progress
+          // ...
+        } catch (error) {
+          console.error('Error updating progress:', error);
+        }
       };
 
+      //Complete Service Request
+      const handleCompleteRequest = async (request: AcceptedServiceRequest) => {
+        const newProgress = "100"; // Set the desired progress value
+    
+            // Create a new object with the updated progress
+            const updatedRequest: AcceptedServiceRequest = { ...request, progress: newProgress };
+        
+            try {
+                // Update the state with the modified request
+                setSelectedRequest(updatedRequest);
+        
+                // Update the progress in the serviceRequest node
+                await firebase.database().ref(`serviceRequest/${request.requestUID}`).update({
+                    progress: newProgress,
+                });
+        
+                // Update the progress in the acceptedServiceRequest node
+                await firebase.database().ref(`acceptedServiceRequest/${request.requestUID}`).update({
+                    progress: newProgress,
+                });
+        
+                // Add the updated request to the successServiceRequest table under the selected user
+                await firebase.database().ref(`successServiceRequest/${request.requestUID}`).set({
+                    ...updatedRequest,
+                    // Add any additional data you want to store in the successServiceRequest table
+                });
+        
+                // Delete the entry in the acceptedServiceRequest node
+                await firebase.database().ref(`acceptedServiceRequest/${request.requestUID}`).remove();
+        
+                // Perform any other logic related to updating the progress
+                // ...
+
+                //Add Verification Logic Here
+
+
+                
+                //to close the chat box once the transaction is completed and Verify
+
+                toggleChat();
+            } catch (error) {
+                console.error('Error updating progress:', error);
+            }
+        };
+      
+    //   useEffect(() => {
+    //     const user = firebase.auth().currentUser;
+      
+    //     if (user) {
+    //       const vehicleOwnerRef = firebase.database().ref(`vehicleOwner/${user.uid}`);
+    //       const serviceRequestRef = firebase.database().ref('serviceRequest');
+      
+    //       Fetch the token from vehicleOwner
+    //       vehicleOwnerRef.once('value', (vehicleOwnerSnapshot) => {
+    //         const vehicleOwnerData: VehicleOwner | null = vehicleOwnerSnapshot.val();
+      
+    //         if (vehicleOwnerData) {
+    //           const token = vehicleOwnerData.token;
+      
+    //           Update the corresponding serviceRequest with the token
+    //           serviceRequestRef.orderByChild('userUID').equalTo(vehicleOwnerData.userUID).once('value', (serviceRequestSnapshot) => {
+    //             serviceRequestSnapshot.forEach((serviceRequestChildSnapshot) => {
+    //               const serviceRequestData: ServiceRequest = serviceRequestChildSnapshot.val();
+    //               serviceRequestRef.child(serviceRequestChildSnapshot.key!).update({ token: token });
+    //             });
+    //           });
+    //         }
+    //       });
+      
+    //       Cleanup
+    //       return () => {
+    //         vehicleOwnerRef.off('value');
+    //         serviceRequestRef.off('value');
+    //       };
+    //     }
+    //   }, []);
+
+    //   const handleSendMessage = () => {
+    //     if (message.trim() !== '') {
+    //       const newMessage = {
+    //         sender: userDisplayName,
+    //         content: message,
+    //         timestamp: new Date().toLocaleString(),
+    //       };
+    
+    //       Push the new message to the Firebase database
+    //       firebase.database().ref('messages').push(newMessage);
+    
+    //       setMessage(''); // Clear the input after sending the message
+    //     }
+    //   };
+    
     //show chat message
     const toggleChat = () => {
         console.log("Before toggling:", showChat);
@@ -1070,7 +1174,7 @@ const DashboardWebpage: React.FC = () => {
                                                     <thead>
                                                         <tr>
                                                             <td>Customer Name</td>
-                                                            <td>Service Selection</td>
+                                                            <td></td>
                                                             <td>Status</td>
                                                         </tr>
                                                     </thead>
@@ -1086,7 +1190,7 @@ const DashboardWebpage: React.FC = () => {
                                                                     <>
                                                                     <td>{row.name}</td>
                                                                     {!isModalVisible && ( // Render the button only if the modal is not visible
-                                                                    <td className="with-button">Tires
+                                                                    <td className="with-button">
                                                                         <button className="view-button" id="viewDetails" onClick={() => openModal(row)}>
                                                                             {viewDetailsLabel}
                                                                         </button>
@@ -1115,6 +1219,7 @@ const DashboardWebpage: React.FC = () => {
                                         {/* Navigation header */}
                                         <div className="chat-content">
                                             <div className="chat-header">
+                                                <img src={require('../assets/profile.jpg')} width="40px" height="40px" alt="User Avatar"  style={{ borderRadius: '50%', objectFit: 'cover', width: '40px', height: '40px', display: 'block'}}/>
                                                 <h3>Jennifer Español</h3>
                                                 <span className="close-btn" onClick={toggleChat}>&times;</span>
                                             </div>
@@ -1122,7 +1227,7 @@ const DashboardWebpage: React.FC = () => {
                                             {/* Chat messages go here */}
                                             <div className="chat-body">
                                                 <div className="message">
-                                                    <img src={require('../assets/profile.jpg')} width="40px" height="40px" alt="User Avatar" />
+                                                <img src={require('../assets/profile.jpg')} width="40px" height="40px" alt="User Avatar" style={{ borderRadius: '50%', objectFit: 'cover' }}/>
                                                     <div className="message-content">
                                                         <p>Hi! I have a question about your service offers.</p>
                                                         <span className="message-time">10:30 AM</span>
@@ -1135,12 +1240,37 @@ const DashboardWebpage: React.FC = () => {
                                                         <span className="message-time">10:35 AM</span>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            </div> 
 
-                                            <div className="chat-input">
-                                                <textarea className="input-box" placeholder="Type a message..." value={message} onChange={handleChange}></textarea>
-                                                <button className="send-button">Send</button>
-                                            </div>
+                                            <button className="send-button">Send</button>
+                                            <br />
+                                            <hr />
+                                            {acceptedRequests.length > 0 ? (    
+                                                acceptedRequests.map((request) => (
+                                                    <>
+                                                    {request.progress === '25' && (
+                                                        <button className='user-circle' onClick={() => handleEnRouteClick(request)}>
+                                                        En Route
+                                                        </button>
+                                                    )}
+                                                    <br />
+                                                    {request.progress === '50' && (
+                                                        <button className="send-button" onClick={() => handleOngoingClick(request)}>
+                                                        Arrived & Repair Ongoing
+                                                        </button>
+                                                    )}
+                                                    <br />
+                                                    {request.progress === '75' && (
+                                                        <button className="send-button" onClick={() => handleCompleteRequest(request)}>
+                                                        Payed & Complete
+                                                        </button>
+                                                    )}
+                                                    </>
+                                                ))
+                                                ) : (
+                                                <div style={{ marginTop: '20px', marginLeft: '10px', marginRight: '10px', marginBottom: '20px' }}>
+                                                </div>
+                                                )}
                                         </div>
                                     </div>
                                 )}
@@ -1169,7 +1299,7 @@ const DashboardWebpage: React.FC = () => {
                                                 </div>
                                                 <hr />
                                                 <div className='contact'>
-                                                <button className='user-circle' onClick={() => handleEnRouteClick(request)}>
+                                                <button className='user-chat-circle' onClick={toggleChat}>
                                                     <img src={require('../assets/icons8-message-48.png')} alt="" className="card-icon" />
                                                 </button>
                                                 </div>
