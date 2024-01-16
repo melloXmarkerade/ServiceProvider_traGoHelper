@@ -693,7 +693,7 @@ td{
 /* Add this to your CSS stylesheet or in your component's style tag */
 .chat-box {
     height: 300px; /* Set a fixed height for the chat box */
-    overflow-y: auto; /* Enable vertical scrolling if the content exceeds the height */
+    overflow-y: auto; /* Enable vertical scrolling if the content exceeds the height */ 
     border: 1px solid #ccc;
     padding: 10px;
     box-sizing: border-box;

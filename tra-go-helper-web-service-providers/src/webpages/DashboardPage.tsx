@@ -61,9 +61,15 @@ interface AcceptedServiceRequest {
     vehicleOwnerEmail: string;
     vehicleType: string;
     profilePicture: string;
-
+    userId: string;
     // Add other properties as needed based on your data structure
   }
+
+  interface TrackingMapProps {
+    serviceProviderLocation: { lat: number; lng: number };
+    vehicleOwnerLocation: { lat: number; lng: number };
+  }
+  
 
 
 const DashboardWebpage: React.FC = () => {
@@ -395,92 +401,7 @@ const DashboardWebpage: React.FC = () => {
         }
     };
 
-    //Display for ongoing request
-
-    // useEffect(() => {
-    //     const fetchAcceptedRequests = async () => {
-    //       const user = firebase.auth().currentUser;
-      
-    //       if (user) {
-    //         const serviceProviderEmail = user.email;
-    //         console.log('Service Provider Email:', serviceProviderEmail);
-      
-    //         const acceptedRequestsRef = firebase.database().ref('acceptedServiceRequest')
-    //           .orderByChild('serviceProviderEmail').equalTo(serviceProviderEmail);
-      
-    //         acceptedRequestsRef.on('value', (snapshot) => {
-    //           console.log('Snapshot for ongoing request:', snapshot.val());
-    //           const acceptedRequestsData: AcceptedServiceRequest[] = [];
-              
-    //           snapshot.forEach((childSnapshot) => {
-    //             const acceptedRequest: AcceptedServiceRequest = childSnapshot.val() as AcceptedServiceRequest;
-    //             acceptedRequestsData.push(acceptedRequest);
-    //           });
-      
-    //           // Update the state with the accepted service requests
-    //           setAcceptedRequests(acceptedRequestsData);
-    //         });
-    //       }
-    //     };
-      
-    //     // Fetch accepted service requests when the component mounts
-    //     fetchAcceptedRequests();
-      
-    //     // Cleanup the event listener when the component unmounts
-    //     return () => {
-    //       const acceptedRequestsRef = firebase.database().ref('acceptedServiceRequest');
-    //       acceptedRequestsRef.off('value');
-    //       console.log('Event listener removed.');
-    //     };
-    //   }, []); // The empty dependency array ensures this effect runs only once when the component mounts
     
-      
-
-    //display when there is ongoing request
-
-    
-       // Dependency array is empty to run the effect only once when the component mounts
-    
- 
-    // useEffect(() => {
-    //     const fetchAndSaveUserData = async () => {
-    //       try {
-    //         const currentUser = firebase.auth().currentUser;    
-            
-    //         if (!currentUser) {
-    //             // Handle the case where the user is not authenticated
-    //             console.error('User not authenticated');
-    //             return;
-    //           }
-            
-    //         if (currentUser) {
-    //           const uid = currentUser.uid;
-    
-    //           // Fetch additional user data from the Realtime Database
-    //           const userSnapshot = await firebase.database().ref(`users/${uid}`).once('value');
-    //           const fetchedUserData = userSnapshot.val();
-    
-    //           // Save fetchedUserData to the Realtime Database
-    //           await firebase.database().ref(`serviceProvider/${uid}`).set({
-    //             ShopName: fetchedUserData?.ShopName || 'DefaultShopName',
-    //             // Add other properties as needed
-    //           });
-              
-    //           console.log('Fetched User Data:', fetchedUserData);
-    //           setUserData(fetchedUserData);
-    
-    //           console.log('User data saved to the database');
-    //           setUserData(fetchedUserData); // Update state with fetched data
-    //         }
-    //       } catch (error) {
-    //         console.error('Error fetching or saving user data:', error);
-    //       }
-    //     };
-    
-    //     // Trigger the fetchAndSaveUserData function when the component mounts
-    //     fetchAndSaveUserData();
-    //   }, []);
-
     //notification
     const [notificationCount, setNotificationCount] = useState(3);
     const [NotifModalVisible, setNotifModalVisible] = useState(false);
@@ -494,6 +415,8 @@ const DashboardWebpage: React.FC = () => {
     const mapRef = useRef<HTMLIFrameElement>(null);
     const [selectedCustomerCoordinates, setSelectedCustomerCoordinates] = useState({ lat: 0, lng: 0 });
     const [locationData, setLocationData] = useState<LocationData | null>(null);
+    const [route, setRoute] = useState(null);
+    const [serviceProviderLocation, setServiceProviderLocation] = useState(null);
 
     //notification
     const openNotificationModal = () => {
@@ -506,6 +429,8 @@ const DashboardWebpage: React.FC = () => {
         setNotifModalVisible(false);
     };
 
+
+
     const getStatusTextModalDisplay = (progress: string) => {
         switch (progress) {
             case "1":
@@ -515,7 +440,7 @@ const DashboardWebpage: React.FC = () => {
             case "50":
                 return "En Route";
             case "75":
-                return "Check and Repair";
+                return "Ongoing Repair";
             case "100":
                 return "Complete";
             case "0":
@@ -714,6 +639,7 @@ const DashboardWebpage: React.FC = () => {
 
     //message
     const [showChat, setShowChat] = useState<boolean>(false);
+    const [openChats, setOpenChats] = useState([]);
     const [message, setMessage] = useState<string>('');
     const [selectedRequest, setSelectedRequest] = useState<AcceptedServiceRequest | null>(null);
 
@@ -868,8 +794,11 @@ const DashboardWebpage: React.FC = () => {
     //show chat message
     const toggleChat = () => {
         console.log("Before toggling:", showChat);
-        setShowChat((prevShowChat) => !prevShowChat);
-        console.log("After toggling:", showChat);
+        setShowChat((prevShowChat) => {
+            const updatedState = !prevShowChat;
+            console.log("After toggling:", updatedState);
+            return updatedState;
+        });
     };
     
     //Auto-expand the textarea by setting its height to scrollHeight
@@ -1136,9 +1065,6 @@ const DashboardWebpage: React.FC = () => {
                                                 <label>Customer Name:</label>
                                                 <input type="text" value={ownerUser?.name} readOnly />
 
-                                                <label>Service Type</label>
-                                                <input type="text" value="Tires" readOnly />
-
                                                 <label>Contact No.:</label>
                                                 <input type="text" value={ownerUser?.phoneNumber} readOnly />
 
@@ -1214,63 +1140,80 @@ const DashboardWebpage: React.FC = () => {
                                 </div>
 
                                 {/*Chat Message */}
+                                {/*Chat Message */}
                                 {showChat && (
                                     <div className={`chat-container ${showChat ? 'active' : ''}`}>
                                         {/* Navigation header */}
                                         <div className="chat-content">
-                                            <div className="chat-header">
-                                                <img src={require('../assets/profile.jpg')} width="40px" height="40px" alt="User Avatar"  style={{ borderRadius: '50%', objectFit: 'cover', width: '40px', height: '40px', display: 'block'}}/>
-                                                <h3>Jennifer Español</h3>
-                                                <span className="close-btn" onClick={toggleChat}>&times;</span>
-                                            </div>
-
-                                            {/* Chat messages go here */}
-                                            <div className="chat-body">
-                                                <div className="message">
-                                                <img src={require('../assets/profile.jpg')} width="40px" height="40px" alt="User Avatar" style={{ borderRadius: '50%', objectFit: 'cover' }}/>
-                                                    <div className="message-content">
-                                                        <p>Hi! I have a question about your service offers.</p>
-                                                        <span className="message-time">10:30 AM</span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="message sender">
-                                                    <div className="message-content">
-                                                        <p>Hello! How can I help you? </p>
-                                                        <span className="message-time">10:35 AM</span>
-                                                    </div>
-                                                </div>
-                                            </div> 
-
-                                            <button className="send-button">Send</button>
-                                            <br />
-                                            <hr />
-                                            {acceptedRequests.length > 0 ? (    
+                                            {acceptedRequests.length > 0 && (
                                                 acceptedRequests.map((request) => (
-                                                    <>
-                                                    {request.progress === '25' && (
-                                                        <button className='user-circle' onClick={() => handleEnRouteClick(request)}>
-                                                        En Route
-                                                        </button>
-                                                    )}
-                                                    <br />
-                                                    {request.progress === '50' && (
-                                                        <button className="send-button" onClick={() => handleOngoingClick(request)}>
-                                                        Arrived & Repair Ongoing
-                                                        </button>
-                                                    )}
-                                                    <br />
-                                                    {request.progress === '75' && (
-                                                        <button className="send-button" onClick={() => handleCompleteRequest(request)}>
-                                                        Payed & Complete
-                                                        </button>
-                                                    )}
-                                                    </>
+                                                    <div key={request.userId}>
+                                                        {/* Chat header */}
+                                                        <div className="chat-header">
+                                                            <img
+                                                                src={request.profilePicture}
+                                                                width="40px"
+                                                                height="40px"
+                                                                alt="User Avatar"
+                                                                style={{
+                                                                    borderRadius: '50%',
+                                                                    objectFit: 'cover',
+                                                                    width: '40px',
+                                                                    height: '40px',
+                                                                    display: 'block'
+                                                                }}
+                                                            />
+                                                            <h3>{request.name}</h3>
+                                                            <span className="close-btn" onClick={toggleChat}>
+                                                                &times;
+                                                            </span>
+                                                        </div>
+
+                                                        {/* Chat messages */}
+                                                        <div className="chat-body">
+                                                            {/* Example messages, replace with actual chat messages */}
+                                                            <div className="message">
+                                                                <img src={request.profilePicture} width="40px" height="40px" alt="User Avatar" style={{ borderRadius: '50%', objectFit: 'cover' }} />
+                                                                <div className="message-content">
+                                                                    <p>Hi! I have a question about your service offers.</p>
+                                                                    <span className="message-time">10:30 AM</span>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="message sender">
+                                                                <div className="message-content">
+                                                                    <p>Hello! How can I help you? </p>
+                                                                    <span className="message-time">10:35 AM</span>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Add more chat messages as needed */}
+                                                        </div>
+
+                                                        {/* Send button */}
+                                                        <button className="send-button">Send</button>
+
+                                                        {/* Progress buttons */}
+                                                        {request.progress === '25' && (
+                                                            <button className='user-circle' onClick={() => handleEnRouteClick(request)}>
+                                                                En Route
+                                                            </button>
+                                                        )}
+
+                                                        {request.progress === '50' && (
+                                                            <button className="send-button" onClick={() => handleOngoingClick(request)}>
+                                                                Arrived & Repair Ongoing
+                                                            </button>
+                                                        )}
+
+                                                        {request.progress === '75' && (
+                                                            <button className="send-button" onClick={() => handleCompleteRequest(request)}>
+                                                                Payed & Complete
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 ))
-                                                ) : (
-                                                <div style={{ marginTop: '20px', marginLeft: '10px', marginRight: '10px', marginBottom: '20px' }}>
-                                                </div>
-                                                )}
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -1278,41 +1221,42 @@ const DashboardWebpage: React.FC = () => {
                                 <div className='customers'>
                                     <div className='card'>
                                         <div className='card-header'>
-                                        <h3>Ongoing Request</h3>
-                                        <button>See all</button>
+                                            <h3>Ongoing Request</h3>
+                                            <button>See all</button>
                                         </div>
 
                                         <div className='card-body'>
-                                        {acceptedRequests.length > 0 ? (
-                                            acceptedRequests.map((request) => (
-                                            <div key={request.requestUID} className='customer'>
-                                                <div className='info'>
-                                                <img src={request.profilePicture} width="40px" height="40px" alt="" className="customer-icon" />
-                                                <div>
-                                                    <h4>{request.name}</h4>
-                                                    <small>Vehicle Owner</small>
+                                            {acceptedRequests.length > 0 ? (
+                                                acceptedRequests.map((request) => (
+                                                    <div key={request.requestUID} className='customer'>
+                                                        <div className='info'>
+                                                            <img src={request.profilePicture} width="40px" height="40px" alt="" className="customer-icon" />
+                                                            <div>
+                                                                <h4>{request.name}</h4>
+                                                                <small>Vehicle Owner</small>
+                                                            </div>
+                                                        </div>
+                                                        <hr />
+                                                        <div className='info'>
+                                                            <h4>Status: {getStatusText(request.progress)}</h4>
+                                                        </div>
+                                                        <hr />
+                                                        <div className='contact'>
+                                                            <button className='user-chat-circle' onClick={() => toggleChat(request.userId)}>
+                                                                <img src={require('../assets/icons8-message-48.png')} alt="" className="card-icon" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div style={{ marginTop: '20px', marginLeft: '10px', marginRight: '10px', marginBottom: '20px' }}>
+                                                    <center>No Ongoing Requests</center>
                                                 </div>
-                                                </div>
-                                                <hr />
-                                                <div className='info'>
-                                                <h4>Status: {getStatusText(request.progress)}</h4>
-                                                </div>
-                                                <hr />
-                                                <div className='contact'>
-                                                <button className='user-chat-circle' onClick={toggleChat}>
-                                                    <img src={require('../assets/icons8-message-48.png')} alt="" className="card-icon" />
-                                                </button>
-                                                </div>
-                                            </div>
-                                            ))
-                                        ) : (
-                                            <div style={{ marginTop: '20px', marginLeft: '10px', marginRight: '10px', marginBottom: '20px' }}>
-                                            <center>No Ongoing Requests</center>
-                                            </div>
-                                        )}
+                                            )}
                                         </div>
                                     </div>
                                 </div>
+
                             </div>
                         </div>
                     )}
