@@ -86,7 +86,18 @@ p {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); 
 }
 
+.FeedbackPanel {
+  display: flex;
+}
 
+.FeedbackPanel .FeedbackList {
+  flex: 1;
+  margin-right: 20px;
+}
+
+.FeedbackPanel .FeedbackForm {
+  flex: 1;
+}
 
 
   
