@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
 import { db } from '../firebase';
 import TermsCondi from './TermsAndConditionsPage';
+import FeedbackPanel from './FeedbackAndReport';
 import '../stylesheets/SettingPage.css';
 import bigImage from '../assets/icons8-setting-50.png';
 
 const SettingsWebpage: React.FC = () => {
   const [isTermsModalOpen, setTermsModalOpen] = useState(false);
+  const [isFeedbackandReportOpen, setFeedbackandreportOpen] = useState(false);
   const [isPasswordModalOpen, setPasswordModalOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -41,9 +43,14 @@ const SettingsWebpage: React.FC = () => {
     setPasswordModalOpen(true);
   };
 
+  const openFeedbackandReport = () => {
+    setFeedbackandreportOpen(true);
+  };
+  
   const closeModals = () => {
     setTermsModalOpen(false);
     setPasswordModalOpen(false);
+    setFeedbackandreportOpen(false);
   };
 
   const handleChangePassword = async () => {
@@ -72,6 +79,11 @@ const SettingsWebpage: React.FC = () => {
         <button className="custom-button" onClick={openTermsModal}>
           Terms and Conditions
         </button>
+
+        <button className="custom-button" onClick={openFeedbackandReport}>
+          Feedback and Report
+        </button>
+
         <button className="custom-button" onClick={openPasswordModal}>
           Change Password
         </button>
@@ -81,7 +93,16 @@ const SettingsWebpage: React.FC = () => {
       <Modal isOpen={isTermsModalOpen} onRequestClose={closeModals}>
         <div className="modal-content">
           <h2>Terms and Conditions</h2>
-          <TermsCondi />
+          <TermsCondi/>
+          <button onClick={closeModals}>Close</button>
+        </div>
+      </Modal>
+
+      {/* Modal for "Feedback and Report" */}
+      <Modal isOpen={isFeedbackandReportOpen} onRequestClose={closeModals}>
+        <div className="modal-content">
+          <h2>Feedback and Report</h2>
+          <FeedbackPanel/>
           <button onClick={closeModals}>Close</button>
         </div>
       </Modal>
