@@ -5,27 +5,41 @@ import SettingWebpage from './SettingPage';
 import '../stylesheets/DashboardPage.css';
 import firebase from 'firebase';
 import Modal from 'react-modal';
+import axios, { AxiosResponse, AxiosError } from 'axios';
+
+interface NotificationsData {
+    to: string;
+    data: {
+        title: string;
+        body: string;
+        datetime: string;
+    };
+    notification: {
+        title: string;
+        body: string;
+    };
+}
 
 interface UserData {
     email: string;
     name: string;
-    profilePicture: string ;
+    profilePicture: string;
     status: string;
-    ID: string; 
+    ID: string;
     ownerName: string;
     userUID: string;
-  }
+}
 
-  interface RequestData {
+interface RequestData {
     otherNotes: string;
     requestUID: string;
     serviceProviderEmail: string;
     name: string;
     progress: string;
     vehicleType: string;
-  }
+}
 
-  interface vehicleOwnerData {
+interface vehicleOwnerData {
     name: string;
     email: string;
     phoneNumber: string;
@@ -35,19 +49,27 @@ interface UserData {
     latitude: string;
     longitude: string;// Set default longitude, adjust as needed
     vehicleType: string;
-  }
+}
 
-  interface vehicleOwnerDataLocation {
+interface vehicleOwnerDataLocation {
     vehicleType: string;
     email: string;
     latitude: string;
     longitude: string;
     userUID: string;
-  }
+}
 
-  interface LocationData {
+interface LocationData {
     latitude: string;
     longitude: string;
+}
+
+interface VehicleOwnerNotifData {
+    email: string;
+    name: string;
+    phoneNumber: string;
+    token: string;
+    userUID: string;
 }
 
 interface AcceptedServiceRequest {
@@ -63,14 +85,63 @@ interface AcceptedServiceRequest {
     profilePicture: string;
     userId: string;
     // Add other properties as needed based on your data structure
-  }
+}
 
-  interface TrackingMapProps {
+interface TrackingMapProps {
     serviceProviderLocation: { lat: number; lng: number };
     vehicleOwnerLocation: { lat: number; lng: number };
-  }
-  
+}
 
+const sendNotification = (token: string, notificationTitle: string, notificationBody: string, datetime: string) => {
+    // Set the API endpoint and headers
+    const endpoint: string = 'https://fcm.googleapis.com/fcm/send';
+    const headers: Record<string, string> = {
+        'Authorization': 'key=AAAAZiEizQI:APA91bECJ127LAk8TZvIMB-G9kcCz34UfdWvTNsAAeSzdbYzqhSecX_LarMl4HRKyyJPXT5oBt0JleBlLN8NL5fSc9EnqTaaeMkuQ8vua4yQsn3Y0mE8PNZn7qp2TLkt4CibCJLVP_h9', // Replace with your FCM API key
+        'Content-Type': 'application/json',
+    };
+
+    /*const notif: Notifications = {
+        data: {
+            title: notificationTitle,
+            body: notificationBody,
+            datetime: datetime || '',
+        },
+        to: token,
+    };*/
+
+
+    const notif: NotificationsData = {
+        to: token,
+        data: {
+            title: notificationTitle,
+            body: notificationBody,
+            datetime: datetime || '',
+        },
+        notification: {
+            title: notificationTitle,
+            body: notificationBody,
+        },
+    };
+
+    // Send the message via the FCM API using axios
+    axios.post(endpoint, notif, { headers })
+        .then((response: AxiosResponse) => {
+            console.log('Successfully sent message:', response.data);
+        })
+        .catch((error: AxiosError) => {
+            if (error.response) {
+                // The request was made and the server responded with a status code
+                console.error('Error sending message, status code:', error.response.status);
+                console.error('Response data:', error.response.data);
+            } else if (error.request) {
+                // The request was made but no response was received
+                console.error('Error sending message, no response received');
+            } else {
+                // Something happened in setting up the request that triggered an Error
+                console.error('Error setting up request:', error.message);
+            }
+        });
+};
 
 const DashboardWebpage: React.FC = () => {
     const [tableData, setTableData] = useState<vehicleOwnerData[]>([]);
@@ -89,281 +160,281 @@ const DashboardWebpage: React.FC = () => {
     // Dashboard Logic after Login
     useEffect(() => {
         const fetchData = async () => {
-          try {
+            try {
 
-            // const newUser = {
-            //     otherNotes: 'none',
-            //     serviceProviderEmail: 'markerade2@gmail.com',
-            //     requestUID: 'c2ojP6PtMvYACTwYsbTRXjMS7RE2',
-            //     vehicleOwnerEmail: 'loidforger@gmail.com',
-            //     progress: '1',
-            //     vehicleType: 'cr54161213'
-            // };
+                // const newUser = {
+                //     otherNotes: 'none',
+                //     serviceProviderEmail: 'markerade2@gmail.com',
+                //     requestUID: 'c2ojP6PtMvYACTwYsbTRXjMS7RE2',
+                //     vehicleOwnerEmail: 'loidforger@gmail.com',
+                //     progress: '1',
+                //     vehicleType: 'cr54161213'
+                // };
 
-            //   const requestUID = newUser.requestUID;
-            //   const newUserRef = firebase.database().ref('serviceRequest').child(requestUID).set(newUser);
+                //   const requestUID = newUser.requestUID;
+                //   const newUserRef = firebase.database().ref('serviceRequest').child(requestUID).set(newUser);
 
-            //   console.log('New user added with key:', requestUID);
+                //   console.log('New user added with key:', requestUID);
 
 
-            // Clear existing data before updating
-            setTableData([]);
-            setOwnerUser(null);
+                // Clear existing data before updating
+                setTableData([]);
+                setOwnerUser(null);
 
-            const user = firebase.auth().currentUser;
+                const user = firebase.auth().currentUser;
 
-            //Display for ongoing request
+                //Display for ongoing request
                 const fetchAcceptedRequests = async () => {
                     const user = firebase.auth().currentUser;
-                
+
                     if (user) {
-                    const serviceProviderEmail = user.email;
-                    console.log('Service Provider Email:', serviceProviderEmail);
-                
-                    const acceptedRequestsRef = firebase.database().ref('acceptedServiceRequest')
-                        .orderByChild('serviceProviderEmail').equalTo(serviceProviderEmail);
-                
-                    acceptedRequestsRef.on('value', (snapshot) => {
-                        console.log('Snapshot for ongoing request:', snapshot.val());
-                        const acceptedRequestsData: AcceptedServiceRequest[] = [];
-                        
-                        snapshot.forEach((childSnapshot) => {
-                        const acceptedRequest: AcceptedServiceRequest = childSnapshot.val() as AcceptedServiceRequest;
-                        acceptedRequestsData.push(acceptedRequest);
+                        const serviceProviderEmail = user.email;
+                        console.log('Service Provider Email:', serviceProviderEmail);
+
+                        const acceptedRequestsRef = firebase.database().ref('acceptedServiceRequest')
+                            .orderByChild('serviceProviderEmail').equalTo(serviceProviderEmail);
+
+                        acceptedRequestsRef.on('value', (snapshot) => {
+                            console.log('Snapshot for ongoing request:', snapshot.val());
+                            const acceptedRequestsData: AcceptedServiceRequest[] = [];
+
+                            snapshot.forEach((childSnapshot) => {
+                                const acceptedRequest: AcceptedServiceRequest = childSnapshot.val() as AcceptedServiceRequest;
+                                acceptedRequestsData.push(acceptedRequest);
+                            });
+
+                            // Update the state with the accepted service requests
+                            setAcceptedRequests(acceptedRequestsData);
                         });
-                
-                        // Update the state with the accepted service requests
-                        setAcceptedRequests(acceptedRequestsData);
-                    });
                     }
                 };
-            
-              // Fetch accepted service requests when the component mounts
-              fetchAcceptedRequests();
-            
-             
-            if (user) {
-              const uid = user.uid;
-      
-              const [serviceProviderSnapshot, userSnapshot] = await Promise.all([
-                firebase.database().ref(`serviceProvider/${uid}`).once('value'),
-                firebase.database().ref(`users/${uid}`).once('value')
-              ]);
-      
-              const existingServiceProviderData = serviceProviderSnapshot.val() || {};
-              const fetchedUserData = userSnapshot.val();
-              const targetEmail = fetchedUserData?.email;
 
-              //Cancel Request Logic Counter
+                // Fetch accepted service requests when the component mounts
+                fetchAcceptedRequests();
 
-              if (user?.email && targetEmail !== null) {
-                const serviceProviderEmail = user.email;
-                const cancelledrequestRef = firebase.database().ref('cancelledServiceRequest').orderByChild('serviceProviderEmail').equalTo(serviceProviderEmail);
-                cancelledrequestRef.on('value', async (snapshot) => {
-                    let count = 0;
 
-                      // Using for...of loop to allow await inside the loop
-                  snapshot.forEach((childSnapshot) => {
-                    const cancelledrequest: RequestData = childSnapshot.val();
-                  
-                    // monintoring data pass through through console
-                    console.log('Request:', cancelledrequest);
-                    console.log('Request email:', cancelledrequest.serviceProviderEmail);
-                    console.log('Owner UID:', cancelledrequest.requestUID);
+                if (user) {
+                    const uid = user.uid;
 
-                    if (cancelledrequest.serviceProviderEmail === user?.email) {
-                        console.log('Request email matches target email');
-                        count++;
-                        const ownerUID = cancelledrequest.requestUID;
-                    
-                        console.log('Cancelled Owner UID:', ownerUID);
+                    const [serviceProviderSnapshot, userSnapshot] = await Promise.all([
+                        firebase.database().ref(`serviceProvider/${uid}`).once('value'),
+                        firebase.database().ref(`users/${uid}`).once('value')
+                    ]);
 
-                    }
-                })
-                 setcancelledRequestCount(count);
-               });
-                
-              }
+                    const existingServiceProviderData = serviceProviderSnapshot.val() || {};
+                    const fetchedUserData = userSnapshot.val();
+                    const targetEmail = fetchedUserData?.email;
 
-              //Success Request Data Counter
-              if (user?.email && targetEmail !== null) {
-                const serviceProviderEmail = user.email;
-                const successrequestRef = firebase.database().ref('successServiceRequest').orderByChild('serviceProviderEmail').equalTo(serviceProviderEmail);
-                successrequestRef.on('value', async (snapshot) => {
-                    let count = 0;
+                    //Cancel Request Logic Counter
 
-                      // Using for...of loop to allow await inside the loop
-                  snapshot.forEach((childSnapshot) => {
-                    const successrequest: RequestData = childSnapshot.val();
-                  
-                    // monintoring data pass through through console
-                    console.log('Request:', successrequest);
-                    console.log('Request email:', successrequest.serviceProviderEmail);
-                    console.log('Owner UID:', successrequest.requestUID);
+                    if (user?.email && targetEmail !== null) {
+                        const serviceProviderEmail = user.email;
+                        const cancelledrequestRef = firebase.database().ref('cancelledServiceRequest').orderByChild('serviceProviderEmail').equalTo(serviceProviderEmail);
+                        cancelledrequestRef.on('value', async (snapshot) => {
+                            let count = 0;
 
-                    if (successrequest.serviceProviderEmail === user?.email) {
-                        console.log('Request email matches target email');
-                        count++;
-                        const ownerUID = successrequest.requestUID;
-                    
-                        console.log('Success Owner UID:', ownerUID);
+                            // Using for...of loop to allow await inside the loop
+                            snapshot.forEach((childSnapshot) => {
+                                const cancelledrequest: RequestData = childSnapshot.val();
+
+                                // monintoring data pass through through console
+                                console.log('Request:', cancelledrequest);
+                                console.log('Request email:', cancelledrequest.serviceProviderEmail);
+                                console.log('Owner UID:', cancelledrequest.requestUID);
+
+                                if (cancelledrequest.serviceProviderEmail === user?.email) {
+                                    console.log('Request email matches target email');
+                                    count++;
+                                    const ownerUID = cancelledrequest.requestUID;
+
+                                    console.log('Cancelled Owner UID:', ownerUID);
+
+                                }
+                            })
+                            setcancelledRequestCount(count);
+                        });
 
                     }
-                })
-                 setsuccessRequestCount(count);
-               });
-                
-              }
 
-               //Accept Request Data Counter
-               if (user?.email && targetEmail !== null) {
-                const serviceProviderEmail = user.email;
-                const acceptedrequestRef = firebase.database().ref('acceptedServiceRequest').orderByChild('serviceProviderEmail').equalTo(serviceProviderEmail);
-                acceptedrequestRef.on('value', async (snapshot) => {
-                    let count = 0;
+                    //Success Request Data Counter
+                    if (user?.email && targetEmail !== null) {
+                        const serviceProviderEmail = user.email;
+                        const successrequestRef = firebase.database().ref('successServiceRequest').orderByChild('serviceProviderEmail').equalTo(serviceProviderEmail);
+                        successrequestRef.on('value', async (snapshot) => {
+                            let count = 0;
 
-                      // Using for...of loop to allow await inside the loop
-                  snapshot.forEach((childSnapshot) => {
-                    const acceptedrequest: RequestData = childSnapshot.val();
-                  
-                    // monintoring data pass through through console
-                    console.log('Request:', acceptedrequest);
-                    console.log('Request email:', acceptedrequest.serviceProviderEmail);
-                    console.log('Owner UID:', acceptedrequest.requestUID);
+                            // Using for...of loop to allow await inside the loop
+                            snapshot.forEach((childSnapshot) => {
+                                const successrequest: RequestData = childSnapshot.val();
 
-                    if (acceptedrequest.serviceProviderEmail === user?.email) {
-                        console.log('Request email matches target email');
-                        count++;
-                        const ownerUID = acceptedrequest.requestUID;
-                    
-                        console.log('Success Owner UID:', ownerUID);
+                                // monintoring data pass through through console
+                                console.log('Request:', successrequest);
+                                console.log('Request email:', successrequest.serviceProviderEmail);
+                                console.log('Owner UID:', successrequest.requestUID);
+
+                                if (successrequest.serviceProviderEmail === user?.email) {
+                                    console.log('Request email matches target email');
+                                    count++;
+                                    const ownerUID = successrequest.requestUID;
+
+                                    console.log('Success Owner UID:', ownerUID);
+
+                                }
+                            })
+                            setsuccessRequestCount(count);
+                        });
 
                     }
-                })
-                 setAcceptedRequestCount(count);
-               });
-                
-              }
-              
-              //Total and Pending request Table Display and Logic
 
-              if (user?.email && targetEmail !== null) {
-                const serviceProviderEmail = user.email;
-                const requestsRef = firebase.database().ref('serviceRequest').orderByChild('serviceProviderEmail').equalTo(serviceProviderEmail);
-      
-                const promises: Promise<void>[] = [];
-      
-                requestsRef.on('value', async (snapshot) => {
-                  let count = 0;
-      
-                  // Using for...of loop to allow await inside the loop
-                  snapshot.forEach((childSnapshot) => {
-                    const request: RequestData = childSnapshot.val();
-                  
-                    // monintoring data pass through through console
-                    console.log('Request:', request);
-                    console.log('Request email:', request.serviceProviderEmail);
-                    console.log('Owner UID:', request.requestUID);
-                  
-                    if (request.serviceProviderEmail === user?.email && parseInt(request.progress) > 0 && parseInt(request.progress) < 100 ) {
-                      console.log('Request email matches target email');
-                      count++;
-                      const ownerUID = request.requestUID;
-                  
-                      console.log('Owner UID:', ownerUID);
-                  
-                      // Fetch owner UID from the service request
-                      if (ownerUID) {
-                        promises.push(
-                          (async () => {
-                            try {
-                                 // Clear existing data before updating
-                                 setTableData([]);
-                                 setOwnerUser(null);
+                    //Accept Request Data Counter
+                    if (user?.email && targetEmail !== null) {
+                        const serviceProviderEmail = user.email;
+                        const acceptedrequestRef = firebase.database().ref('acceptedServiceRequest').orderByChild('serviceProviderEmail').equalTo(serviceProviderEmail);
+                        acceptedrequestRef.on('value', async (snapshot) => {
+                            let count = 0;
 
-                              // Fetch owner data from the vehicleOwner table
-                              const ownerSnapshot = await firebase.database().ref(`vehicleOwner/${ownerUID}`).once(`value`);
-                              const ownerData = ownerSnapshot.val();
-                                
-                              if (ownerData) {
-                                // Display owner data
-                                const vehicleOwnerUserDataToDisplay: vehicleOwnerData = {
-                                    name: ownerData.name || 'OwnerName',
-                                    email: ownerData.email || 'email address for owner',
-                                    userUID: ownerData.userUID || 'RequestUID',
-                                    phoneNumber: ownerData.phoneNumber || 'phonenumber',
-                                    profilePicture: ownerData.profilePicture || 'profilePictureURL',
-                                    status: getStatusText(request.progress), // Use request.progress instead of existingServiceProviderData.progress
-                                    latitude: '',
-                                    longitude: '',
-                                    vehicleType: ownerData.vehicleType
-                                };
-                                console.log('request status:', request.progress);
-                                setOwnerUser(vehicleOwnerUserDataToDisplay);
-                                console.log('owner Name', vehicleOwnerUserDataToDisplay);
-                                
-                                 // Add owner data to tableData
-                                 setTableData((prevTableData) => [...prevTableData, vehicleOwnerUserDataToDisplay]);
-                              } else {
-                                console.error('Owner data not found.');
-                              }
-                              
-                            } catch (error) {
-                              console.error('Error fetching owner data:', error);
-                            }
-                          })()
-                        );
-                      } else {
-                        console.error('Owner UID not found in the service request.');
-                      }
+                            // Using for...of loop to allow await inside the loop
+                            snapshot.forEach((childSnapshot) => {
+                                const acceptedrequest: RequestData = childSnapshot.val();
+
+                                // monintoring data pass through through console
+                                console.log('Request:', acceptedrequest);
+                                console.log('Request email:', acceptedrequest.serviceProviderEmail);
+                                console.log('Owner UID:', acceptedrequest.requestUID);
+
+                                if (acceptedrequest.serviceProviderEmail === user?.email) {
+                                    console.log('Request email matches target email');
+                                    count++;
+                                    const ownerUID = acceptedrequest.requestUID;
+
+                                    console.log('Success Owner UID:', ownerUID);
+
+                                }
+                            })
+                            setAcceptedRequestCount(count);
+                        });
+
                     }
-                  })
-                  
-                  
-                  // Wait for all promises to resolve
-                  await Promise.all(promises);
-                  console.log('owner name: ' , ownerUser?.name);
-                  setRequestCount(count);
-                });
-              } else {
-                console.error('User email or target email is null.');
-              }
-      
-              const userDataToDisplay: UserData = {
-                name: fetchedUserData?.name || 'DefaultShopName',
-                profilePicture: fetchedUserData?.profilePicture || null,
-                ownerName: fetchedUserData?.ownerName || null,
-                userUID: fetchedUserData?.userUID || null,
-                ...existingServiceProviderData,
-              };
-      
-              console.log('User data fetched from the database:', userDataToDisplay);
-              setUserData(userDataToDisplay);
-            } else {
-              console.error('User not authenticated. Wait for Admin to approve the account');
+
+                    //Total and Pending request Table Display and Logic
+
+                    if (user?.email && targetEmail !== null) {
+                        const serviceProviderEmail = user.email;
+                        const requestsRef = firebase.database().ref('serviceRequest').orderByChild('serviceProviderEmail').equalTo(serviceProviderEmail);
+
+                        const promises: Promise<void>[] = [];
+
+                        requestsRef.on('value', async (snapshot) => {
+                            let count = 0;
+
+                            // Using for...of loop to allow await inside the loop
+                            snapshot.forEach((childSnapshot) => {
+                                const request: RequestData = childSnapshot.val();
+
+                                // monintoring data pass through through console
+                                console.log('Request:', request);
+                                console.log('Request email:', request.serviceProviderEmail);
+                                console.log('Owner UID:', request.requestUID);
+
+                                if (request.serviceProviderEmail === user?.email && parseInt(request.progress) > 0 && parseInt(request.progress) < 100) {
+                                    console.log('Request email matches target email');
+                                    count++;
+                                    const ownerUID = request.requestUID;
+
+                                    console.log('Owner UID:', ownerUID);
+
+                                    // Fetch owner UID from the service request
+                                    if (ownerUID) {
+                                        promises.push(
+                                            (async () => {
+                                                try {
+                                                    // Clear existing data before updating
+                                                    setTableData([]);
+                                                    setOwnerUser(null);
+
+                                                    // Fetch owner data from the vehicleOwner table
+                                                    const ownerSnapshot = await firebase.database().ref(`vehicleOwner/${ownerUID}`).once(`value`);
+                                                    const ownerData = ownerSnapshot.val();
+
+                                                    if (ownerData) {
+                                                        // Display owner data
+                                                        const vehicleOwnerUserDataToDisplay: vehicleOwnerData = {
+                                                            name: ownerData.name || 'OwnerName',
+                                                            email: ownerData.email || 'email address for owner',
+                                                            userUID: ownerData.userUID || 'RequestUID',
+                                                            phoneNumber: ownerData.phoneNumber || 'phonenumber',
+                                                            profilePicture: ownerData.profilePicture || 'profilePictureURL',
+                                                            status: getStatusText(request.progress), // Use request.progress instead of existingServiceProviderData.progress
+                                                            latitude: '',
+                                                            longitude: '',
+                                                            vehicleType: ownerData.vehicleType
+                                                        };
+                                                        console.log('request status:', request.progress);
+                                                        setOwnerUser(vehicleOwnerUserDataToDisplay);
+                                                        console.log('owner Name', vehicleOwnerUserDataToDisplay);
+
+                                                        // Add owner data to tableData
+                                                        setTableData((prevTableData) => [...prevTableData, vehicleOwnerUserDataToDisplay]);
+                                                    } else {
+                                                        console.error('Owner data not found.');
+                                                    }
+
+                                                } catch (error) {
+                                                    console.error('Error fetching owner data:', error);
+                                                }
+                                            })()
+                                        );
+                                    } else {
+                                        console.error('Owner UID not found in the service request.');
+                                    }
+                                }
+                            })
+
+
+                            // Wait for all promises to resolve
+                            await Promise.all(promises);
+                            console.log('owner name: ', ownerUser?.name);
+                            setRequestCount(count);
+                        });
+                    } else {
+                        console.error('User email or target email is null.');
+                    }
+
+                    const userDataToDisplay: UserData = {
+                        name: fetchedUserData?.name || 'DefaultShopName',
+                        profilePicture: fetchedUserData?.profilePicture || null,
+                        ownerName: fetchedUserData?.ownerName || null,
+                        userUID: fetchedUserData?.userUID || null,
+                        ...existingServiceProviderData,
+                    };
+
+                    console.log('User data fetched from the database:', userDataToDisplay);
+                    setUserData(userDataToDisplay);
+                } else {
+                    console.error('User not authenticated. Wait for Admin to approve the account');
+                }
+
+
+            } catch (error) {
+                console.error('Error fetching user data:', error);
             }
-            
-            
-          } catch (error) {
-            console.error('Error fetching user data:', error);
-          }
         };
-      
+
         const unsubscribe = firebase.auth().onAuthStateChanged(fetchData);
 
-         // Cleanup the event listener when the component unmounts
+        // Cleanup the event listener when the component unmounts
         // Unsubscribe from the 'value' event and AuthStateChanged when the component unmounts
         return () => {
             const acceptedRequestsRef = firebase.database().ref('acceptedServiceRequest');
             acceptedRequestsRef.off('value');
             console.log('Event listener removed.');
-          const requestsRef = firebase.database().ref('serviceRequest');
-          requestsRef.off('value');
-          unsubscribe();
+            const requestsRef = firebase.database().ref('serviceRequest');
+            requestsRef.off('value');
+            unsubscribe();
         };
-      }, [setRequestCount, setUserData, setTableData]);
-      //First things to know the status is to be check here from classes and right after the data will be transffered to status Text
-      const getStatusClass = (status: string) => {
+    }, [setRequestCount, setUserData, setTableData]);
+    //First things to know the status is to be check here from classes and right after the data will be transffered to status Text
+    const getStatusClass = (status: string) => {
         switch (status) {
             case "1":
                 return "status-pending";
@@ -401,7 +472,7 @@ const DashboardWebpage: React.FC = () => {
         }
     };
 
-    
+
     //notification
     const [notificationCount, setNotificationCount] = useState(3);
     const [NotifModalVisible, setNotifModalVisible] = useState(false);
@@ -409,7 +480,7 @@ const DashboardWebpage: React.FC = () => {
     //modal
     const [isModalVisible, setModalVisible] = useState(false);
 
-    
+
     //map
     const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyAZNytfQ7AIyGd12zHfAYKp-sWzOR2IzA8';
     const mapRef = useRef<HTMLIFrameElement>(null);
@@ -423,7 +494,7 @@ const DashboardWebpage: React.FC = () => {
         console.log("Opening notification modal");
         setNotifModalVisible(true);
     }
-    
+
     const closeNotificationModal = () => {
         console.log("Closing notification modal");
         setNotifModalVisible(false);
@@ -456,14 +527,14 @@ const DashboardWebpage: React.FC = () => {
             // Fetch the selected user's data using the userUID from vehicleOwner table
             const ownerSnapshot = await firebase.database().ref(`vehicleOwner/${selectedOwnerUser.userUID}`).once('value');
             const ownerData = ownerSnapshot.val();
-            
-    
+
+
             if (ownerData) {
                 // Fetch additional data from the serviceRequest table based on userUID
                 const serviceRequestSnapshot = await firebase.database().ref(`serviceRequest/${selectedOwnerUser.userUID}`).once('value');
                 const serviceRequestData = serviceRequestSnapshot.val();
-                
-                
+
+
                 // Display owner data
                 const vehicleOwnerUserDataToDisplay: vehicleOwnerData = {
                     name: ownerData.name || 'OwnerName',
@@ -476,39 +547,39 @@ const DashboardWebpage: React.FC = () => {
                     longitude: '0', // Set default longitude, adjust as needed
                     vehicleType: serviceRequestData?.vehicleType || 'DefaultVehicleType', // Include the vehicleType property
                 };
-    
+
                 console.log('location test data transfer:', vehicleOwnerUserDataToDisplay);
-                
+
                 console.log('Before setting state in openModal:', selectedOwnerUser);
                 // Update the state with the selected user's data
                 setOwnerUser(vehicleOwnerUserDataToDisplay);
                 console.log('After setting state in openModal:', selectedOwnerUser);
-    
+
                 // Fetch latitude and longitude from the location table using userUID
                 const locationSnapshot = await firebase.database().ref(`vehicleOwnerLocation/${vehicleOwnerUserDataToDisplay.userUID}`).once('value');
                 const locationData = locationSnapshot.val();
-    
+
                 if (locationData) {
                     // Display location data
                     const locationDataToDisplay: LocationData = {
                         latitude: locationData.latitude || '0',
                         longitude: locationData.longitude || '0',
                     };
-    
-                    console.log ('coordinate of selected User: ', locationData);
+
+                    console.log('coordinate of selected User: ', locationData);
                     setLocationData(locationDataToDisplay);
                     setSelectedCustomerCoordinates(locationData);
                 } else {
                     console.error('Location data not found.');
                 }
-                
+
                 console.log('Selected Owner User:', selectedOwnerUser);
                 setModalVisible(true); // Set the modal visible after updating the state
-               
+
             } else {
                 console.error('Owner data not found.');
             }
-            
+
         } catch (error) {
             console.error('Error fetching owner data:', error);
         }
@@ -534,7 +605,7 @@ const DashboardWebpage: React.FC = () => {
                 if (serviceRequestData) {
                     await acceptedServiceRequestRef.set({
                         profilePicture: ownerUser.profilePicture,
-                        name:ownerUser.name,
+                        name: ownerUser.name,
                         phoneNumber: ownerUser.phoneNumber,
                         ...serviceRequestData,
                         timestamp: firebase.database.ServerValue.TIMESTAMP,
@@ -546,12 +617,36 @@ const DashboardWebpage: React.FC = () => {
                 // Set the selected owner user
                 setSelectedOwnerUser(ownerUser);
 
+
                 // Close the modal after updating the data
                 setModalVisible(false);
-                } else {
-                    console.log('Selected Owner User:', selectedOwnerUser);
-                    console.error('selectedOwnerUser not found.');
+            } else {
+                console.log('Selected Owner User:', selectedOwnerUser);
+                console.error('selectedOwnerUser not found.');
             }
+
+            const vehicleOwnerRef = firebase.database().ref('vehicleOwner').orderByChild('email').equalTo(ownerUser?.email!!);
+
+            vehicleOwnerRef.once('value')
+                .then((snapshot) => {
+                    // Handle the data here
+                    const data: { [key: string]: VehicleOwnerNotifData } = snapshot.val();
+
+                    // Now 'data' is an object where keys are Firebase database keys,
+                    // and values are objects conforming to the VehicleOwnerNotifData interface.
+
+                    // Example: Accessing the first item in the data object
+                    const firstItem: VehicleOwnerNotifData | undefined = data ? data[Object.keys(data)[0]] : undefined;
+
+                    // Use the data as needed
+                    sendNotification(firstItem?.token!!, "Request accepted", "Your request has been accepted","")
+                    console.log('Data:', firstItem);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+
+
         } catch (error) {
             console.error('Error accepting request:', error);
         }
@@ -586,10 +681,30 @@ const DashboardWebpage: React.FC = () => {
 
                 // Close the modal after updating the data
                 setModalVisible(false);
-                } else {
-                    console.log('Selected Owner User:', selectedOwnerUser);
-                    console.error('selectedOwnerUser not found.');
+            } else {
+                console.log('Selected Owner User:', selectedOwnerUser);
+                console.error('selectedOwnerUser not found.');
             }
+            const vehicleOwnerRef = firebase.database().ref('vehicleOwner').orderByChild('email').equalTo(ownerUser?.email!!);
+
+            vehicleOwnerRef.once('value')
+                .then((snapshot) => {
+                    // Handle the data here
+                    const data: { [key: string]: VehicleOwnerNotifData } = snapshot.val();
+
+                    // Now 'data' is an object where keys are Firebase database keys,
+                    // and values are objects conforming to the VehicleOwnerNotifData interface.
+
+                    // Example: Accessing the first item in the data object
+                    const firstItem: VehicleOwnerNotifData | undefined = data ? data[Object.keys(data)[0]] : undefined;
+
+                    // Use the data as needed
+                    sendNotification(firstItem?.token!!, "Request declined", "Your request has been denied","")
+                    console.log('Data:', firstItem);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
         } catch (error) {
             console.error('Error accepting request:', error);
         }
@@ -628,7 +743,7 @@ const DashboardWebpage: React.FC = () => {
                 zoom: 14,
             };
             const map = new window.google.maps.Map(mapRef.current, mapOptions);
-    
+
             const markerCoordinates = { lat: selectedCustomerCoordinates.lat, lng: selectedCustomerCoordinates.lng };
             const marker = new window.google.maps.Marker({
                 position: markerCoordinates,
@@ -646,118 +761,177 @@ const DashboardWebpage: React.FC = () => {
     //En Route Process
     const handleEnRouteClick = async (request: AcceptedServiceRequest) => {
         const newProgress = "50"; // Set the desired progress value
-      
+
         // Create a new object with the updated progress
         const updatedRequest: AcceptedServiceRequest = { ...request, progress: newProgress };
-      
-        try {
-          // Update the state with the modified request
-          setSelectedRequest(updatedRequest);
-      
-          // Update the progress in the serviceRequest node
-          await firebase.database().ref(`serviceRequest/${request.requestUID}`).update({
-            progress: newProgress,
-          });
-      
-          // Update the progress in the acceptedServiceRequest node
-          await firebase.database().ref(`acceptedServiceRequest/${request.requestUID}`).update({
-            progress: newProgress,
-          });
-      
-          // Perform any other logic related to updating the progress
-          // ...
-        } catch (error) {
-          console.error('Error updating progress:', error);
-        }
-      };
 
-      //Ongoing Procees
-      const handleOngoingClick = async (request: AcceptedServiceRequest) => {
+        try {
+            // Update the state with the modified request
+            setSelectedRequest(updatedRequest);
+
+            // Update the progress in the serviceRequest node
+            await firebase.database().ref(`serviceRequest/${request.requestUID}`).update({
+                progress: newProgress,
+            });
+
+            // Update the progress in the acceptedServiceRequest node
+            await firebase.database().ref(`acceptedServiceRequest/${request.requestUID}`).update({
+                progress: newProgress,
+            });
+
+            // Perform any other logic related to updating the progress
+            // ...
+            const vehicleOwnerRef = firebase.database().ref('vehicleOwner').orderByChild('email').equalTo(request.vehicleOwnerEmail!!);
+
+            vehicleOwnerRef.once('value')
+                .then((snapshot) => {
+                    // Handle the data here
+                    const data: { [key: string]: VehicleOwnerNotifData } = snapshot.val();
+
+                    // Now 'data' is an object where keys are Firebase database keys,
+                    // and values are objects conforming to the VehicleOwnerNotifData interface.
+
+                    // Example: Accessing the first item in the data object
+                    const firstItem: VehicleOwnerNotifData | undefined = data ? data[Object.keys(data)[0]] : undefined;
+
+                    // Use the data as needed
+                    sendNotification(firstItem?.token!!, "Request en route", "Your request is now en route","")
+                    console.log('Data:', firstItem);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+        } catch (error) {
+            console.error('Error updating progress:', error);
+        }
+    };
+
+    //Ongoing Procees
+    const handleOngoingClick = async (request: AcceptedServiceRequest) => {
         const newProgress = "75"; // Set the desired progress value
-      
+
         // Create a new object with the updated progress
         const updatedRequest: AcceptedServiceRequest = { ...request, progress: newProgress };
-      
+
         try {
-          // Update the state with the modified request
-          setSelectedRequest(updatedRequest);
-      
-          // Update the progress in the serviceRequest node
-          await firebase.database().ref(`serviceRequest/${request.requestUID}`).update({
-            progress: newProgress,
-          });
-      
-          // Update the progress in the acceptedServiceRequest node
-          await firebase.database().ref(`acceptedServiceRequest/${request.requestUID}`).update({
-            progress: newProgress,
-          });
-      
-          // Perform any other logic related to updating the progress
-          // ...
+            // Update the state with the modified request
+            setSelectedRequest(updatedRequest);
+
+            // Update the progress in the serviceRequest node
+            await firebase.database().ref(`serviceRequest/${request.requestUID}`).update({
+                progress: newProgress,
+            });
+
+            // Update the progress in the acceptedServiceRequest node
+            await firebase.database().ref(`acceptedServiceRequest/${request.requestUID}`).update({
+                progress: newProgress,
+            });
+
+            // Perform any other logic related to updating the progress
+            // ...
+            const vehicleOwnerRef = firebase.database().ref('vehicleOwner').orderByChild('email').equalTo(request.vehicleOwnerEmail!!);
+
+            vehicleOwnerRef.once('value')
+                .then((snapshot) => {
+                    // Handle the data here
+                    const data: { [key: string]: VehicleOwnerNotifData } = snapshot.val();
+
+                    // Now 'data' is an object where keys are Firebase database keys,
+                    // and values are objects conforming to the VehicleOwnerNotifData interface.
+
+                    // Example: Accessing the first item in the data object
+                    const firstItem: VehicleOwnerNotifData | undefined = data ? data[Object.keys(data)[0]] : undefined;
+
+                    // Use the data as needed
+                    sendNotification(firstItem?.token!!, "Request on-going inspection", "Your request is now on-going inspection and repair","")
+                    console.log('Data:', firstItem);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
         } catch (error) {
-          console.error('Error updating progress:', error);
+            console.error('Error updating progress:', error);
         }
-      };
+    };
 
-      //Complete Service Request
-      const handleCompleteRequest = async (request: AcceptedServiceRequest) => {
+    //Complete Service Request
+    const handleCompleteRequest = async (request: AcceptedServiceRequest) => {
         const newProgress = "100"; // Set the desired progress value
-    
-            // Create a new object with the updated progress
-            const updatedRequest: AcceptedServiceRequest = { ...request, progress: newProgress };
-        
-            try {
-                // Update the state with the modified request
-                setSelectedRequest(updatedRequest);
-        
-                // Update the progress in the serviceRequest node
-                await firebase.database().ref(`serviceRequest/${request.requestUID}`).update({
-                    progress: newProgress,
+
+        // Create a new object with the updated progress
+        const updatedRequest: AcceptedServiceRequest = { ...request, progress: newProgress };
+
+        try {
+            // Update the state with the modified request
+            setSelectedRequest(updatedRequest);
+
+            // Update the progress in the serviceRequest node
+            await firebase.database().ref(`serviceRequest/${request.requestUID}`).update({
+                progress: newProgress,
+            });
+
+            // Update the progress in the acceptedServiceRequest node
+            await firebase.database().ref(`acceptedServiceRequest/${request.requestUID}`).update({
+                progress: newProgress,
+            });
+
+            // Add the updated request to the successServiceRequest table under the selected user
+            await firebase.database().ref(`successServiceRequest/${request.requestUID}`).set({
+                ...updatedRequest,
+                // Add any additional data you want to store in the successServiceRequest table
+            });
+
+            // Delete the entry in the acceptedServiceRequest node
+            await firebase.database().ref(`acceptedServiceRequest/${request.requestUID}`).remove();
+
+            // Perform any other logic related to updating the progress
+            // ...
+
+            //Add Verification Logic Here
+
+
+
+            //to close the chat box once the transaction is completed and Verify
+            const vehicleOwnerRef = firebase.database().ref('vehicleOwner').orderByChild('email').equalTo(request.vehicleOwnerEmail!!);
+
+            vehicleOwnerRef.once('value')
+                .then((snapshot) => {
+                    // Handle the data here
+                    const data: { [key: string]: VehicleOwnerNotifData } = snapshot.val();
+
+                    // Now 'data' is an object where keys are Firebase database keys,
+                    // and values are objects conforming to the VehicleOwnerNotifData interface.
+
+                    // Example: Accessing the first item in the data object
+                    const firstItem: VehicleOwnerNotifData | undefined = data ? data[Object.keys(data)[0]] : undefined;
+
+                    // Use the data as needed
+                    sendNotification(firstItem?.token!!, "Request complete", "Your request has been completed","")
+                    console.log('Data:', firstItem);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
                 });
-        
-                // Update the progress in the acceptedServiceRequest node
-                await firebase.database().ref(`acceptedServiceRequest/${request.requestUID}`).update({
-                    progress: newProgress,
-                });
-        
-                // Add the updated request to the successServiceRequest table under the selected user
-                await firebase.database().ref(`successServiceRequest/${request.requestUID}`).set({
-                    ...updatedRequest,
-                    // Add any additional data you want to store in the successServiceRequest table
-                });
-        
-                // Delete the entry in the acceptedServiceRequest node
-                await firebase.database().ref(`acceptedServiceRequest/${request.requestUID}`).remove();
-        
-                // Perform any other logic related to updating the progress
-                // ...
+            toggleChat();
+        } catch (error) {
+            console.error('Error updating progress:', error);
+        }
+    };
 
-                //Add Verification Logic Here
-
-
-                
-                //to close the chat box once the transaction is completed and Verify
-
-                toggleChat();
-            } catch (error) {
-                console.error('Error updating progress:', error);
-            }
-        };
-      
     //   useEffect(() => {
     //     const user = firebase.auth().currentUser;
-      
+
     //     if (user) {
     //       const vehicleOwnerRef = firebase.database().ref(`vehicleOwner/${user.uid}`);
     //       const serviceRequestRef = firebase.database().ref('serviceRequest');
-      
+
     //       Fetch the token from vehicleOwner
     //       vehicleOwnerRef.once('value', (vehicleOwnerSnapshot) => {
     //         const vehicleOwnerData: VehicleOwner | null = vehicleOwnerSnapshot.val();
-      
+
     //         if (vehicleOwnerData) {
     //           const token = vehicleOwnerData.token;
-      
+
     //           Update the corresponding serviceRequest with the token
     //           serviceRequestRef.orderByChild('userUID').equalTo(vehicleOwnerData.userUID).once('value', (serviceRequestSnapshot) => {
     //             serviceRequestSnapshot.forEach((serviceRequestChildSnapshot) => {
@@ -767,7 +941,7 @@ const DashboardWebpage: React.FC = () => {
     //           });
     //         }
     //       });
-      
+
     //       Cleanup
     //       return () => {
     //         vehicleOwnerRef.off('value');
@@ -783,14 +957,14 @@ const DashboardWebpage: React.FC = () => {
     //         content: message,
     //         timestamp: new Date().toLocaleString(),
     //       };
-    
+
     //       Push the new message to the Firebase database
     //       firebase.database().ref('messages').push(newMessage);
-    
+
     //       setMessage(''); // Clear the input after sending the message
     //     }
     //   };
-    
+
     //show chat message
     const toggleChat = () => {
         console.log("Before toggling:", showChat);
@@ -800,7 +974,7 @@ const DashboardWebpage: React.FC = () => {
             return updatedState;
         });
     };
-    
+
     //Auto-expand the textarea by setting its height to scrollHeight
     const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
         setMessage(e.target.value);
@@ -890,70 +1064,70 @@ const DashboardWebpage: React.FC = () => {
                         </div>
                     </div>
 
-                {/* Modal Account Profile*/}
-                <Modal
-                    isOpen={isProfileOpen}
-                    onRequestClose={closeProfile}
-                    contentLabel="Account Profile"
-                    style={{
-                    overlay: {
-                        zIndex: 1000,
-                    },
-                    content: {
-                        zIndex: 1001,
-                    },
-                    }}
-                >
-                    <div>
-                    <h2>Account Profile</h2>
-                    <div className="Account-panel">
-                        {user? (
-                        <div className="DetailsPanel">
-                            <div className="DetailForm">
-                            <table className="AProfileTable">
-                                <tbody>
-                                <tr>
-                                    <td>ID:</td>
-                                    <td>
-                                    <span className='user-detail'>{user.userUID}</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Full Name:</td>
-                                    <td>
-                                    <span className='user-detail'>{user.ownerName}</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Shop Name:</td>
-                                    <td>
-                                    <span className='user-detail'>{user.name}</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Email:</td>
-                                    <td>
-                                    <span className='user-detail'>{user.email}</span>
-                                    </td>
-                                </tr>
-                                </tbody>
-                            </table>
+                    {/* Modal Account Profile*/}
+                    <Modal
+                        isOpen={isProfileOpen}
+                        onRequestClose={closeProfile}
+                        contentLabel="Account Profile"
+                        style={{
+                            overlay: {
+                                zIndex: 1000,
+                            },
+                            content: {
+                                zIndex: 1001,
+                            },
+                        }}
+                    >
+                        <div>
+                            <h2>Account Profile</h2>
+                            <div className="Account-panel">
+                                {user ? (
+                                    <div className="DetailsPanel">
+                                        <div className="DetailForm">
+                                            <table className="AProfileTable">
+                                                <tbody>
+                                                    <tr>
+                                                        <td>ID:</td>
+                                                        <td>
+                                                            <span className='user-detail'>{user.userUID}</span>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Full Name:</td>
+                                                        <td>
+                                                            <span className='user-detail'>{user.ownerName}</span>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Shop Name:</td>
+                                                        <td>
+                                                            <span className='user-detail'>{user.name}</span>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Email:</td>
+                                                        <td>
+                                                            <span className='user-detail'>{user.email}</span>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p>Loading...</p>
+                                )}
                             </div>
+                            <button onClick={closeProfile}>Close</button>
                         </div>
-                        ) : (
-                        <p>Loading...</p>
-                        )}
-                    </div>
-                    <button onClick={closeProfile}>Close</button>
-                    </div>
-                </Modal>
+                    </Modal>
                 </header>
 
 
                 {/*Notifications*/}
                 {NotifModalVisible && (
                     <div className="notification-modal" id="notificationModal">
-                         <span className="notification-modal-close" onClick={closeNotificationModal}>&times;</span>
+                        <span className="notification-modal-close" onClick={closeNotificationModal}>&times;</span>
                         <div className="notification-modal-content">
                             <div className="notification-modal-header">
                                 <h1 className="notification-modal-title">Notifications</h1>
@@ -1002,15 +1176,15 @@ const DashboardWebpage: React.FC = () => {
                     {activeMenuItem === 'dashboard' && (
                         <div>
                             <div className='dashboard-cards'>
-                                    <div className='dashboard-card-single'>
-                                        <div>
-                                            <h1 className='card-h1'>{TotalrequestCount}</h1>
-                                            <span>Total Request</span>
-                                        </div>
-                                        <div>
-                                            <img src={require('../assets/icons8-email-48.png')} alt="" className="card-icon" />
-                                        </div>
+                                <div className='dashboard-card-single'>
+                                    <div>
+                                        <h1 className='card-h1'>{TotalrequestCount}</h1>
+                                        <span>Total Request</span>
                                     </div>
+                                    <div>
+                                        <img src={require('../assets/icons8-email-48.png')} alt="" className="card-icon" />
+                                    </div>
+                                </div>
 
                                 <div className='dashboard-card-single'>
                                     <div>
@@ -1076,7 +1250,7 @@ const DashboardWebpage: React.FC = () => {
 
                                                 <div className="modal-button-container">
                                                     <button className="modal-accept-button" onClick={handleAccept}>Accept</button>
-                                                    <button className="modal-decline-button"onClick={handleDecline}>Decline</button>
+                                                    <button className="modal-decline-button" onClick={handleDecline}>Decline</button>
                                                 </div>
                                             </div>
                                         </div>
@@ -1107,29 +1281,29 @@ const DashboardWebpage: React.FC = () => {
                                                     <tbody>
                                                         {tableData.length === 0 ? (
                                                             <tr>
-                                                            <td colSpan={3}>No data available</td>
+                                                                <td colSpan={3}>No data available</td>
                                                             </tr>
                                                         ) : (
                                                             tableData.map((row, index) => (
-                                                            <tr key={index}>
-                                                                {row.status === 'Pending' && (
-                                                                    <>
-                                                                    <td>{row.name}</td>
-                                                                    {!isModalVisible && ( // Render the button only if the modal is not visible
-                                                                    <td className="with-button">
-                                                                        <button className="view-button" id="viewDetails" onClick={() => openModal(row)}>
-                                                                            {viewDetailsLabel}
-                                                                        </button>
-                                                                    </td>
+                                                                <tr key={index}>
+                                                                    {row.status === 'Pending' && (
+                                                                        <>
+                                                                            <td>{row.name}</td>
+                                                                            {!isModalVisible && ( // Render the button only if the modal is not visible
+                                                                                <td className="with-button">
+                                                                                    <button className="view-button" id="viewDetails" onClick={() => openModal(row)}>
+                                                                                        {viewDetailsLabel}
+                                                                                    </button>
+                                                                                </td>
+                                                                            )}
+                                                                            {!isModalVisible && (
+                                                                                <td className={`with-button ${getStatusClass(row.status)}`}>
+                                                                                    {(row.status)}
+                                                                                </td>
+                                                                            )}
+                                                                        </>
                                                                     )}
-                                                                    {!isModalVisible && ( 
-                                                                    <td className={`with-button ${getStatusClass(row.status)}`}>
-                                                                    {(row.status)}
-                                                                    </td>
-                                                                    )}
-                                                                    </>
-                                                                )}
-                                                            </tr>
+                                                                </tr>
                                                             ))
                                                         )}
                                                     </tbody>
