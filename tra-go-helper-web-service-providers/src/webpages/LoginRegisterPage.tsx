@@ -32,21 +32,34 @@ const LoginRegisterWebpage: React.FC = () => {
           if (currentUser) {
             const uid = currentUser.uid;
             const userEmail = currentUser.email;
-    
+
             // Fetch additional user data from the Realtime Database
             const userSnapshot = await firebase.database().ref(`users/${uid}`).once('value');
             const userData = userSnapshot.val();
-    
-            // Update the global state with user data
-            setUserData(userData);
-    
-            console.log(`User ID: ${uid}`);
-            console.log(`Email: ${userEmail}`);
-    
-            // Redirect to the dashboard or perform other actions
-            console.log('Logging in');
-            window.location.href = '/dashboard';
-          }
+
+            // Check the status from the serviceProvider table
+            const serviceProviderSnapshot = await firebase.database().ref(`serviceProvider/${uid}`).once('value');
+            const serviceProviderData = serviceProviderSnapshot.val();
+
+            if (serviceProviderData && serviceProviderData.status === 'Pending') {
+                // Deny login if the status is pending
+                console.log('Login denied. Service provider status is pending.');
+                setErrorMessage('Login denied. Service provider status is pending.');
+                setShowModal(true);
+                // Optionally, you may want to sign the user out here.
+                await firebase.auth().signOut();
+            } else {
+                // Update the global state with user data
+                setUserData(userData);
+
+                console.log(`User ID: ${uid}`);
+                console.log(`Email: ${userEmail}`);
+
+                // Redirect to the dashboard or perform other actions
+                console.log('Logging in');
+                window.location.href = '/dashboard';
+            }
+        }
         } catch (error) {
           console.error('Error logging in:', error);
     
@@ -129,6 +142,48 @@ const LoginRegisterWebpage: React.FC = () => {
         });
       };
 
+    // Function to generate a unique ID in the format "SP-0001", "SP-0002", etc.
+    const generateUniqueID = async () => {
+        try {
+          let newNumber = 1;
+      
+          while (true) {
+            const newID = `SP-${newNumber.toString().padStart(4, '0')}`;
+            const snapshot = await db.ref('serviceProvider').once('value');
+      
+            if (!snapshot.exists()) {
+              // If the table is empty, return the new ID
+              console.log('New ID:', newID);
+              return newID;
+            }
+      
+            let isUnique = true;
+      
+            snapshot.forEach((childSnapshot) => {
+              const childData = childSnapshot.val();
+      
+              // Check if the SPUID field exists and has the same value as the current ID
+              if (childData && childData.SPUID === newID) {
+                isUnique = false;
+              }
+            });
+      
+            if (isUnique) {
+              // If no record has the SPUID field matching the current ID, return the new ID
+              console.log('New ID:', newID);
+              return newID;
+            }
+      
+            // If the SPUID field is not unique, increment and try again
+            newNumber++;
+          }
+        } catch (error) {
+          console.error('Error generating unique ID:', error);
+          // Handle the error or return a default value, e.g., 'SP-0001'
+          return 'SP-0001';
+        }
+      };
+
     
     // Success Modal
     const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -148,6 +203,9 @@ const LoginRegisterWebpage: React.FC = () => {
         if (currentUser) {
          // Get the UID of the newly pushed data
          const userUID = currentUser?.uid;
+
+         // Generate a unique UID in the format "SP-0001", "SP-0002", etc.
+        const serviceProviderUID = await generateUniqueID();
 
         const selectedServicesArray = Object.entries(formData.selectedServices)
         .filter(([_, selected]) => selected)
@@ -206,6 +264,7 @@ const LoginRegisterWebpage: React.FC = () => {
             identificationPhotoFileURL,
             profilePicturePhotoFileURL,  
             status: 'Pending',
+            SPUID: serviceProviderUID
           // Add other user information here
              });
             await db.ref(`serviceProvider/${userUID}`).set({
@@ -228,6 +287,7 @@ const LoginRegisterWebpage: React.FC = () => {
             token: '',
             type: 'tires',
             userUID: '', // Placeholder for now
+            SPUID: serviceProviderUID
             // Add other user information here
              });
 
@@ -267,7 +327,7 @@ const LoginRegisterWebpage: React.FC = () => {
 
             setTimeout(() => {
             window.location.reload();
-          }, 5000); // 3000 milliseconds = 3 seconds
+          }, 3000); // 3000 milliseconds = 3 seconds
 
         }
   
@@ -313,6 +373,34 @@ const LoginRegisterWebpage: React.FC = () => {
     /* Progress Bar */
     const previousButton = document.querySelectorAll(".register-btn-prev") as NodeListOf<HTMLButtonElement>;
     const nextButton = document.querySelectorAll(".register-btn-next") as NodeListOf<HTMLButtonElement>;
+
+    nextButton.forEach(button => {
+        button.addEventListener('click', () => {
+            // Validation logic here
+            if (!isFormValid()) {
+                // Prevent progress if form is not valid
+                return;
+            }
+            // Proceed to the next step
+            // Add your logic to navigate to the next step here
+        });
+    });
+
+    function isFormValid() {
+        // Add your validation logic here
+        // Return true if form is valid, false otherwise
+        // For example:
+        if (formData.firstname === '' || formData.lastname === '' || formData.email === '' || formData.password === '' || formData.Confirmpassword === '') {
+            alert("Please fill in all required fields.");
+            return false;
+        }
+        if (formData.password !== formData.Confirmpassword) {
+            alert("Passwords do not match.");
+            return false;
+        }
+        return true; // Form is valid
+    }
+    
     const progress = document.getElementById("progress") as HTMLElement;
     const formSteps = document.querySelectorAll(".step") as NodeListOf<HTMLDivElement>;
     const progressStep = document.querySelectorAll(".progress-step") as NodeListOf<HTMLDivElement>;
@@ -381,6 +469,27 @@ const LoginRegisterWebpage: React.FC = () => {
             console.error(`Invalid form step index: ${formStepNumber}`);
         }
     }
+
+
+    const handleNextClick = () => {
+        // Check if any of the required fields are empty
+        const requiredFields: (keyof typeof formData)[] = ['firstname', 'middlename', 'lastname', 'username', 'email', 'password', 'Confirmpassword'];
+        const emptyFields = requiredFields.filter(field => !formData[field]);
+    
+        if (emptyFields.length > 0) {
+            alert("Please fill in all required fields.");
+            return;
+        }
+    
+        // Additional validation for passwords matching
+        if (formData.password !== formData.Confirmpassword) {
+            alert("Passwords do not match.");
+            return;
+        }
+    
+        // Proceed to the next step
+        // Add your logic to navigate to the next step here
+    };
 
     
     return (
@@ -475,7 +584,7 @@ const LoginRegisterWebpage: React.FC = () => {
                                     <label htmlFor='Confirmpassword' className='register-label'>Confirm Password</label>
                                 </div>
 
-                                <button type='button' className='register-btn-next'>Next</button>
+                                <button type='button' className='register-btn-next' onClick={handleNextClick}>Next</button>
 
                                 <div className='register-login'>
                                     <span>Already have an account? <a href='#' className='login-link' onClick={toggleForm}>Login</a></span>
